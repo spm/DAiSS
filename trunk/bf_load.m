@@ -19,7 +19,7 @@ end
 
 % load MAT file
 %--------------------------------------------------------------------------
-if nargin == 1
+if nargin <= 1
     BF = load(file);
 else
     BF = load(file, fields{:});

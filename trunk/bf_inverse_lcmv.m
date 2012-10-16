@@ -40,6 +40,7 @@ for m = 1:numel(modalities)
         
         for i = 1:nvert
             if ~isnan(L{i})
+                
                 lf    = L{i};
                 
                 % Robert's code
