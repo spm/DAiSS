@@ -1,7 +1,7 @@
 %-----------------------------------------------------------------------
 % Job configuration created by cfg_util (rev $Rev$)
 %-----------------------------------------------------------------------
-matlabbatch{1}.spm.meeg.source.headmodel.D = {};
+matlabbatch{1}.spm.meeg.source.headmodel.D = {''};
 matlabbatch{1}.spm.meeg.source.headmodel.val = 1;
 matlabbatch{1}.spm.meeg.source.headmodel.comment = '';
 matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.template = 1;
