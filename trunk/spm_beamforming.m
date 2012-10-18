@@ -6,7 +6,7 @@ function spm_beamforming
 % Vladimir Litvak
 % $Id$
 
-pipelines = spm_select('List', fullfile(spm('dir'), 'toolbox', 'Beamforming'), '^bf_pipeline_.*\.m$');
+pipelines = spm_select('List', fileparts(mfilename('fullpath')), '^bf_pipeline_.*\.m$');
 pipelines = cellstr(pipelines);
 pipelines = [cell(length(pipelines), 1), pipelines(:)];
 for i = 1:size(pipelines, 1)
