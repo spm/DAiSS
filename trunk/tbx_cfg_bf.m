@@ -10,11 +10,13 @@ if ~isdeployed, addpath(fullfile(spm('dir'),'toolbox','Beamforming')); end
 
 components = {
     'bf_data';
+    'bf_copy';
     'bf_sources'
     'bf_features'
     'bf_inverse'
     'bf_output'
     'bf_write'
+    
     };
 
 bf = cfg_choice;
