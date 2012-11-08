@@ -165,7 +165,7 @@ switch S.result
                     cpow(j) = w*Cy{j}*w';
                 end
                 
-                pow(i) = cpow*S.contrast';
+                pow(i) = S.contrast*cpow;
                 
             end
             

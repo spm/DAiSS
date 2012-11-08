@@ -55,8 +55,14 @@ spm_progress_bar('Clear');
 
 C = YY/ns;
 
+%figure;imagesc(C);colorbar;
+
 lambda = (S.lambda/100) * trace(C)/size(C,1);
 
 C = C + lambda * eye(size(C));
+
+%Y2=D(S.channels, S.samples{1}, S.trials);
+%Y2=reshape(permute(Y2,[2 3 1]),size(Y2,2)*size(Y2,3),size(Y2,1));
+%C=cov(Y2);
 
 res = C;
