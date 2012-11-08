@@ -15,7 +15,7 @@ end
 vars =  whos('-file', file);
 if numel(intersect({vars(:).name}, bf_std_fields)) == 0
     error('No BF fields in the file');
-end
+end 
 
 % load MAT file
 %--------------------------------------------------------------------------
