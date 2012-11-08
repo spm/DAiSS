@@ -1,16 +1,28 @@
-function res = bf_inverse_lcmv(BF, S)
-% Computes LCMV filters
+function res = bf_inverse_lcmv_use_pca_order(BF, S)
+% Computes LCMV filters using spm_pca_order to constrain inverse of data
+% cov matrix
 % Copyright (C) 2012 Wellcome Trust Centre for Neuroimaging
-
-% Vladimir Litvak
-% $Id$
+%
+% Based on the paper:
+% MEG beamforming using Bayesian PCA for adaptive data covariance matrix regularization.
+% Woolrich M, Hunt L, Groves A, Barnes G.
+% Neuroimage. 2011 Aug 15;57(4)
+%
+% Mark Woolrich
+% $Id: bf_inverse_lcmv_use_pca_order.m 4847 2012-08-16 17:29:23Z vladimir $
 
 %--------------------------------------------------------------------------
 if nargin == 0      
+    
+    pca_order = cfg_entry;
+    pca_order.tag = 'pca_order';
+    pca_order.name = 'PCA order';        
+    pca_order.val = {};
+   
     lcmv      = cfg_branch;
-    lcmv.tag  = 'lcmv';
-    lcmv.name = 'LCMV';
-    lcmv.val  = {};
+    lcmv.tag  = 'lcmv_use_pca_order';
+    lcmv.name = 'LCMV use PCA order';
+    lcmv.val  = {pca_order};      
     
     res = lcmv;
     
@@ -19,13 +31,16 @@ elseif nargin < 2
     error('Two input arguments are required');
 end
 
-modalities = {'MEG', 'EEG'};
+modalities = {'MEG'};
 
 for m = 1:numel(modalities)
     if isfield(BF.features.C, modalities{m})
+        
+        reduce_rank=BF.sources.reduce_rank.(modalities{m});
+        
         C = BF.features.C.(modalities{m});
         
-        invCy =  pinv(C); % assuming already regularized
+        [invCy, pca_order_used] = pinv_plus(C, S.pca_order); % rank maybe not be detected properly by just using pinv - MWW
         
         L = BF.sources.L.(modalities{m});
         
@@ -43,12 +58,16 @@ for m = 1:numel(modalities)
                 lf    = L{i};
                 
                 % Robert's code
-                [u, s, v] = svd(real(pinv(lf' * invCy *lf)));
+                tmp=lf' * invCy *lf;                
+                [u, ~] = svd(real(pinv_plus(tmp,reduce_rank,0)),'econ'); % this is faster,  - MWW
+                                      
                 eta = u(:,1);
                 lf  = lf * eta;
                           
                 % construct the spatial filter
-                W{i} = pinv(lf' * invCy * lf) * lf' * invCy;
+                %W{i} = pinv(lf' * invCy * lf) * lf' * invCy;                
+                W{i} = lf'*invCy/(lf' * invCy * lf); % this is faster - MWW
+                
             else
                 W{i} = NaN;
             end

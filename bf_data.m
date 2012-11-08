@@ -67,13 +67,17 @@ cd(outdir);
 %-Ask about overwriting files from previous analyses
 %--------------------------------------------------------------------------
 if exist(fullfile(pwd,'BF.mat'),'file')
-    str = {'Current directory contains existing BF file:',...
+    if(0)
+        str = {'Current directory contains existing BF file:',...
         'Continuing will overwrite existing file!'};
-    if spm_input(str,1,'bd','stop|continue',[1,0],1,mfilename);
-        fprintf('%-40s: %30s\n\n',...
-            'Abort...   (existing BF file)',spm('time'));
-        out = []; return
-    end
+    
+        if spm_input(str,1,'bd','stop|continue',[1,0],1,mfilename);
+            fprintf('%-40s: %30s\n\n',...
+                'Abort...   (existing BF file)',spm('time'));
+            out = []; return
+        end
+    end;
+    warning('Current directory contains existing BF file. Continuing will overwrite existing file!');
 end
 
 BF        = [];

@@ -58,28 +58,37 @@ end
 
 nvert = size(BF.sources.pos, 1);
 modalities = {'MEG', 'EEG'};
+reduce_rank=[2 3]; %MWW
 
 for m = 1:numel(modalities)
     
     if isfield(BF.data, modalities{m})
         
-        
+        %%%%%%%%
+        %MWW
+        chanind = strmatch(modalities{m}, BF.data.D.chantype);
+        chanind = setdiff(chanind, BF.data.D.badchannels);
+        if isempty(chanind)
+            error(['No good ' modalities{m} ' channels were found.']);
+        end
         [vol, sens] = ft_prepare_vol_sens(BF.data.(modalities{m}).vol, BF.data.(modalities{m}).sens, 'channel', ...
-            chanlabels(BF.data.D, meegchannels(BF.data.D, modalities{m})));
-        
+            chanlabels(BF.data.D, chanind));
+        %%%%%%%%
         
         spm('Pointer', 'Watch');drawnow;
         spm_progress_bar('Init', nvert, ['Computing ' modalities{m} ' leadfields']); drawnow;
         if nvert > 100, Ibar = floor(linspace(1, nvert,100));
         else Ibar = 1:nvert; end
         
-        L = cell(1, nvert);
+        L = cell(1, nvert);       
         
         for i = 1:nvert
-            if ft_inside_vol(BF.sources.pos(i, :), vol)
+            if (1),%ft_inside_vol(BF.sources.pos(i, :), vol) % MWW
                 
-                L{i}  = ft_compute_leadfield(BF.sources.pos(i, :), sens, vol);
-                
+                %L{i}  = ft_compute_leadfield(BF.sources.pos(i, :), sens,
+                %vol); %MWW
+                L{i}  = ft_compute_leadfield(BF.sources.pos(i, :), sens, vol, 'reducerank', reduce_rank(m)); %MWW
+
                 if ~isempty(BF.sources.ori)
                     L{i}  = L{i}*BF.sources.ori(i, :)';
                 end
@@ -94,7 +103,7 @@ for m = 1:numel(modalities)
          
         spm_progress_bar('Clear');
         
-        
+        BF.sources.reduce_rank.(modalities{m})=reduce_rank(m); %MWW
         BF.sources.L.(modalities{m}) = L;
     end
 end
