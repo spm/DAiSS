@@ -47,15 +47,6 @@ woi.num = [Inf 2];
 woi.val = {[-Inf Inf]};
 woi.help = {'Time window to average over (ms)'};
 
-%MWW
-%foi = cfg_entry;
-%foi.tag = 'foi';
-%foi.name = 'Frequency window of interest';
-%foi.strtype = 'r';
-%foi.num = [1 2];
-%foi.val = {[0 0]};
-%foi.help = {'Frequency window (Hz)'};
-
 %--------------------------------------------------------------------------
 % method
 %--------------------------------------------------------------------------
@@ -72,7 +63,6 @@ end
 out = cfg_exbranch;
 out.tag = 'features';
 out.name = 'Covariance features';
-%out.val = {BF, whatconditions, woi, foi, plugin};
 out.val = {BF, whatconditions, woi, plugin};
 out.help = {'Define features for covariance computation'};
 out.prog = @bf_features_run;
@@ -106,26 +96,18 @@ else
     end
 end
 
-% S.foi = job.foi; %MWW
-
 modalities = {'MEG', 'EEG'};
 
 for m = 1:numel(modalities)
     
     if isfield(BF.data, modalities{m})
-        %S.channels = setdiff(meegchannels(D, modalities{m}),
-        %D.badchannels); % MWW
-        
-        %%%%%%%%
-        %MWW
         chanind = strmatch(modalities{m}, BF.data.D.chantype);
         chanind = setdiff(chanind, BF.data.D.badchannels);
         if isempty(chanind)
             error(['No good ' modalities{m} ' channels were found.']);
         end
         S.channels=chanind;
-        %%%%%%%%
-        
+
         BF.features.C.(modalities{m}) = feval(['bf_features_' plugin_name], BF, S);
     end
 end

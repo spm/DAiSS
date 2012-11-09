@@ -37,12 +37,12 @@ end
 
 iskull = export(gifti(BF.data.mesh.tess_iskull), 'ft');
 
-M1 = BF.data.transforms.toMNI;
+M1 = BF.data.transforms.toNative;
 
 switch S.space
     case 'MNI template'
-        M2 = inv(M1);
-        M1 = eye(4);
+        M1 = BF.data.transforms.toMNI/M1;
+        M2 = inv(BF.data.transforms.toMNI);
     case 'MNI-aligned'
         M1 = BF.data.transforms.toMNI_aligned/M1;
         M2 = inv(BF.data.transforms.toMNI_aligned);
@@ -50,9 +50,9 @@ switch S.space
         M1 = BF.data.transforms.toHead/M1;
         M2 = inv(BF.data.transforms.toHead);
     case 'Native'
-        M1 = BF.data.transforms.toNative/M1;
-        M2 = inv(BF.data.transforms.toNative);
-end        
+        M2 = inv(M1);
+        M1 = eye(4);
+end
 
 iskull = ft_transform_geometry(M1, iskull);
 mn = min(iskull.pnt);
