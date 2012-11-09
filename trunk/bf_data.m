@@ -37,10 +37,18 @@ space.labels = {'MNI-aligned', 'Head', 'Native'};
 space.values = {'MNI-aligned', 'Head', 'Native'};
 space.val = {'MNI-aligned'};
 
+overwrite = cfg_menu;
+overwrite.tag = 'overwrite';
+overwrite.name = 'Overwrite BF.mat if exists';
+overwrite.help = {'Choose whether to overwrite the existing BF.mat file'};
+overwrite.labels = {'Yes', 'No'};
+overwrite.values = {1, 0};
+overwrite.val = {0};
+
 out = cfg_exbranch;
 out.tag = 'data';
 out.name = 'Prepare data';
-out.val = {dir, D, val, space};
+out.val = {dir, D, val, space, overwrite};
 out.help = {'Prepare the input for beamforming'};
 out.prog = @bf_data_run;
 out.vout = @bf_data_vout;
@@ -66,18 +74,14 @@ cd(outdir);
 
 %-Ask about overwriting files from previous analyses
 %--------------------------------------------------------------------------
-if exist(fullfile(pwd,'BF.mat'),'file')
-    if(0)
-        str = {'Current directory contains existing BF file:',...
+if exist(fullfile(pwd,'BF.mat'),'file') && ~job.overwrite
+    str = {'Current directory contains existing BF file:',...
         'Continuing will overwrite existing file!'};
-    
-        if spm_input(str,1,'bd','stop|continue',[1,0],1,mfilename);
-            fprintf('%-40s: %30s\n\n',...
-                'Abort...   (existing BF file)',spm('time'));
-            out = []; return
-        end
-    end;
-    warning('Current directory contains existing BF file. Continuing will overwrite existing file!');
+    if spm_input(str,1,'bd','stop|continue',[1,0],1,mfilename);
+        fprintf('%-40s: %30s\n\n',...
+            'Abort...   (existing BF file)',spm('time'));
+        out = []; return
+    end
 end
 
 BF        = [];
