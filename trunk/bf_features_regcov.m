@@ -42,6 +42,12 @@ else Ibar = 1:ntrials; end
 for i = 1:ntrials
     for j = 1:numel(S.samples)
         Y  = squeeze(D(S.channels, S.samples{j}, S.trials(i)));
+        
+        % FIXME: I think, We need to remove the temporal mean according to the definition of the covariance matrix and not the spatial mean
+        % We can do two things here: loading the whole dataset and remove the mean at once or removing the temporal mean of each trial
+        % I would recommend the first one and consider the second on as an option, since the data has already been baseline corrected
+        % Note that we can write an online version as well, if you dont one to load wole trials at once.    
+        
         Y  = detrend(Y', 'constant');
         YY = YY+(Y'*Y);
         ns = ns + length(S.samples{j})-1;
