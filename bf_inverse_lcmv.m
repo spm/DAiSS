@@ -40,7 +40,11 @@ for m = 1:numel(modalities)
         
         for i = 1:nvert
             if ~isnan(L{i})
-                lf    = L{i};
+                lf    = L{i};                
+                
+                % FIXME: The original 'pinv' in matlab does not necessarily work here. Roberts uses a pinv with 10 times bigger tol and Mark has his own pinv. 
+                % I would recommend to write a new pinv that can be used throughout this software.
+                % It is also clear that if you regularise eoungh the covariance matrix there is no need to a new pinv
                 
                 % Robert's code
                 [u, s, v] = svd(real(pinv(lf' * invCy *lf)));
