@@ -6,7 +6,7 @@ function bf = tbx_cfg_bf
 % Vladimir Litvak
 % $Id$
 
-if ~isdeployed, addpath(fullfile(spm('dir'),'toolbox','Beamforming')); end
+if ~isdeployed, addpath(fileparts(mfilename('fullpath'))); end
 
 components = {
     'bf_data';

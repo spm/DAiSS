@@ -21,7 +21,7 @@ plugin      = cfg_choice;
 plugin.tag  = 'plugin';
 plugin.name = 'Source space type ';
 
-source_funs = spm_select('List', fullfile(spm('dir'), 'toolbox', 'Beamforming'), '^bf_sources_.*\.m$');
+source_funs = spm_select('List', fileparts(mfilename('fullpath')), '^bf_sources_.*\.m$');
 source_funs = cellstr(source_funs );
 for i = 1:numel(source_funs)
     plugin.values{i} = feval(spm_file(source_funs{i},'basename'));
