@@ -54,7 +54,7 @@ plugin      = cfg_choice;
 plugin.tag  = 'plugin';
 plugin.name = 'Covariance computation method';
 
-feature_funs = spm_select('List', fullfile(spm('dir'), 'toolbox', 'Beamforming'), '^bf_features_.*\.m$');
+feature_funs = spm_select('List', fileparts(mfilename('fullpath')), '^bf_features_.*\.m$');
 feature_funs = cellstr(feature_funs );
 for i = 1:numel(feature_funs)
     plugin.values{i} = feval(spm_file(feature_funs{i},'basename'));

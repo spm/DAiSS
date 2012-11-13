@@ -22,7 +22,7 @@ plugin      = cfg_choice;
 plugin.tag  = 'plugin';
 plugin.name = 'Output method';
 
-output_funs = spm_select('List', fullfile(spm('dir'), 'toolbox', 'Beamforming'), '^bf_output_.*\.m$');
+output_funs = spm_select('List', fileparts(mfilename('fullpath')), '^bf_output_.*\.m$');
 output_funs = cellstr(output_funs );
 for i = 1:numel(output_funs)
     plugin.values{i} = feval(spm_file(output_funs{i},'basename'));

@@ -21,7 +21,7 @@ plugin      = cfg_choice;
 plugin.tag  = 'plugin';
 plugin.name = 'What to write out';
 
-write_funs = spm_select('List', fullfile(spm('dir'), 'toolbox', 'Beamforming'), '^bf_write_.*\.m$');
+write_funs = spm_select('List', fileparts(mfilename('fullpath')), '^bf_write_.*\.m$');
 write_funs = cellstr(write_funs );
 for i = 1:numel(write_funs)
     plugin.values{i} = feval(spm_file(write_funs{i},'basename'));
