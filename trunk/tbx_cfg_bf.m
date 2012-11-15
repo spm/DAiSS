@@ -6,7 +6,9 @@ function bf = tbx_cfg_bf
 % Vladimir Litvak
 % $Id$
 
-if ~isdeployed, addpath(fileparts(mfilename('fullpath'))); end
+tbxdir = fileparts(mfilename('fullpath'));
+
+if ~isdeployed, addpath(tbxdir); end
 
 components = {
     'bf_data';
@@ -28,3 +30,15 @@ for i = 1:numel(components)
   bf.values{i} = feval(components{i});
 end
 
+% Generate the menu function automatically in case of a different directory
+% name (might fail if there is no write permission)
+[tbx_path, tbx_name] = fileparts(tbxdir);
+if ~isequal(tbx_name, 'beamforming')
+    if ~exist(fullfile(tbxdir, ['spm_' tbx_name '.m']), 'file')
+        try
+            fid = fopen(fullfile(tbxdir, ['spm_' tbx_name '.m']), 'w');
+            fprintf(fid, 'function spm_%s\n\nspm_beamforming', tbx_name);
+            fclose(fid);
+        end
+    end
+end
