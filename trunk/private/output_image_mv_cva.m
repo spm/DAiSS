@@ -21,6 +21,7 @@ X0  = spm_svd(X0); %% X0 is null space i.e. everything that is happening in othe
 %--------------------------------------------------------------------------
 Y     = Y - X0*(X0'*Y); %% eg remove DC level or drift terms from all of Y
 Xred     = Xred - X0*(X0'*Xred);
+%% Xred=X*c-X0*(X0'*X*c)
 
 P     = pinv(Xred);
 
