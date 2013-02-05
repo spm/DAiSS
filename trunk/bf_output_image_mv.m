@@ -132,6 +132,7 @@ channels = setdiff(meegchannels(D, S.modality), D.badchannels);
 
 YY       = {};
 nsamples = unique(cellfun(@length, samples));
+
 if length(nsamples) > 1
     error('All time windows should be equal lentgh')
 end
@@ -197,6 +198,7 @@ S.regressout=[]; %% turn off for now
 regressout=S.regressout;
 S.datatype='sumpower';
 
+%% set up the data features
 Yfull=get_data_features(flatdata,nsamples,Nt,-1,dctT,S.datatype,featureind,regressout); %% set up data structures
 
 
@@ -215,6 +217,7 @@ for i = 1:nvert
         
         w    = W{i};
         
+        %% returns columns of a matrix with rows as different observations
         [Yfull,vedata]=get_data_features(flatdata,nsamples,Nt,w,dctT,S.datatype,featureind,regressout); %% extract the data features
         
         Yfull=Yfull-repmat(mean(Yfull),size(Yfull,1),1); %% remove dc level from each column/feature
