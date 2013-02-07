@@ -66,8 +66,7 @@ for m = 1:numel(modalities)
         
         %%%%%%%%
         %MWW
-        chanind = strmatch(modalities{m}, BF.data.D.chantype);
-        chanind = setdiff(chanind, BF.data.D.badchannels);
+        chanind = indchantype(BF.data.D, modalities{m}, 'GOOD');
         if isempty(chanind)
             error(['No good ' modalities{m} ' channels were found.']);
         end

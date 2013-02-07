@@ -90,7 +90,7 @@ end
 if isfield(job.whatconditions, 'all')
     S.trials = 1:D.ntrials;
 else    
-    S.trials = D.pickconditions(job.whatconditions.condlabel);
+    S.trials = D.indtrial(job.whatconditions.condlabel, 'GOOD');
     if isempty(S.trials)
         error('No trials matched the selection, check the specified condition labels');
     end
@@ -101,8 +101,7 @@ modalities = {'MEG', 'EEG'};
 for m = 1:numel(modalities)
     
     if isfield(BF.data, modalities{m})
-        chanind = strmatch(modalities{m}, BF.data.D.chantype);
-        chanind = setdiff(chanind, BF.data.D.badchannels);
+        chanind = indchantype(BF.data.D, modalities{m}, 'GOOD');
         if isempty(chanind)
             error(['No good ' modalities{m} ' channels were found.']);
         end

@@ -100,17 +100,17 @@ if isfield(S.whatconditions, 'all')
     trials{1} = 1:D.ntrials;
 else
     for i = 1:numel(S.whatconditions.condlabel)
-        if isempty(D.pickconditions(S.whatconditions.condlabel{i}))
+        if isempty(D.indtrial(S.whatconditions.condlabel{i}, 'GOOD'))
             error('No trials matched the selection.');
         end
-        trials{i} = D.pickconditions(S.whatconditions.condlabel{i});
+        trials{i} = D.indtrial(S.whatconditions.condlabel{i}, 'GOOD');
     end
     if isempty(trials)
         error('No trials matched the selection, check the specified condition labels');
     end
 end
 
-channels = setdiff(meegchannels(D, S.modality), D.badchannels);
+channels = D.indchantype(S.modality, 'GOOD');
 
 YY       = {};
 nsamples = unique(cellfun(@length, samples));
