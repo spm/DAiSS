@@ -39,6 +39,7 @@ spm_progress_bar('Init', ntrials, 'Computing covariance'); drawnow;
 if ntrials > 100, Ibar = floor(linspace(1, ntrials,100));
 else Ibar = 1:ntrials; end
 
+
 for i = 1:ntrials
     for j = 1:numel(S.samples)
         Y  = squeeze(D(S.channels, S.samples{j}, S.trials(i)));
