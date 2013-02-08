@@ -35,6 +35,23 @@ if nargin == 0
     whatconditions.values = {all, conditions};
     whatconditions.val = {all};
     
+    
+    
+%     design = cfg_const;
+%     design.tag = 'design';
+%     design.name = 'design';
+%     design.help = {'Use default settings for the inversion'};
+%     design.val  = {1};
+    
+    design = cfg_files;
+design.tag = 'design';
+design.name = 'design matrix';
+design.filter = 'mat';
+design.num = [1 Inf];
+design.help = {'Select the design matrix'};
+    
+    
+    
     woi = cfg_entry;
     woi.tag = 'woi';
     woi.name = 'Time windows of interest';
@@ -57,7 +74,7 @@ if nargin == 0
     datafeatures.name = 'Features';
     datafeatures.labels =get_data_features;
     datafeatures.values =get_data_features;
-
+    
     datafeatures.help = {'Data features of interest'};
     datafeatures.val =datafeatures.values(1);
     
@@ -94,10 +111,24 @@ if nargin == 0
         }';
     modality.val = {'MEG'};
     
+    custom = cfg_branch;
+    custom.tag = 'custom';
+    custom.name = 'Custom';
+    custom.help = {'Define custom settings for the inversion'};
+    custom.val  = {whatconditions, contrast, woi};
+    
+    isdesign = cfg_choice;
+    isdesign.tag = 'isdesign';
+    isdesign.name = 'Design matrix parameters';
+    isdesign.help = {'Choose whether to load custom design'};
+    isdesign.values = {design, custom};
+    isdesign.val = {design};
+    
+    
     image_mv      = cfg_branch;
     image_mv.tag  = 'image_mv';
     image_mv.name = 'Mv image';
-    image_mv.val  = {whatconditions, woi,foi, datafeatures, contrast, result, modality};
+    image_mv.val  = { isdesign, datafeatures, foi,  result, modality};
     
     res = image_mv;
     
@@ -106,9 +137,13 @@ elseif nargin < 2
     error('Two input arguments are required');
 end
 
+
+
+
 %keyboard;
 D = BF.data.D;
 
+design=load(job.design);
 samples = {};
 for i = 1:size(S.woi, 1)
     samples{i} = D.indsample(S.woi(i, 1)):D.indsample(S.woi(i, 2));
