@@ -37,18 +37,18 @@ if nargin == 0
     
     
     
-%     design = cfg_const;
-%     design.tag = 'design';
-%     design.name = 'design';
-%     design.help = {'Use default settings for the inversion'};
-%     design.val  = {1};
+    %     design = cfg_const;
+    %     design.tag = 'design';
+    %     design.name = 'design';
+    %     design.help = {'Use default settings for the inversion'};
+    %     design.val  = {1};
     
     design = cfg_files;
-design.tag = 'design';
-design.name = 'design matrix';
-design.filter = 'mat';
-design.num = [1 Inf];
-design.help = {'Select the design matrix'};
+    design.tag = 'design';
+    design.name = 'design matrix';
+    design.filter = 'mat';
+    design.num = [1 Inf];
+    design.help = {'Select the design matrix'};
     
     
     
@@ -143,30 +143,55 @@ end
 %keyboard;
 D = BF.data.D;
 
-design=load(job.design);
-samples = {};
-for i = 1:size(S.woi, 1)
-    samples{i} = D.indsample(S.woi(i, 1)):D.indsample(S.woi(i, 2));
-end
 
-if isfield(S.whatconditions, 'all')
-    trials{1} = 1:D.ntrials;
-else
-    for i = 1:numel(S.whatconditions.condlabel)
-        if isempty(D.indtrial(S.whatconditions.condlabel{i}, 'GOOD'))
-            error('No trials matched the selection.');
+if isfield(S.isdesign,'whatconditions'),
+    %% gui specified conditions and contrast
+    samples = {};
+    for i = 1:size(S.woi, 1)
+        samples{i} = D.indsample(S.woi(i, 1)):D.indsample(S.woi(i, 2));
+    end
+    
+    if isfield(S.whatconditions, 'all')
+        trials{1} = 1:D.ntrials;
+    else
+        for i = 1:numel(S.whatconditions.condlabel)
+            if isempty(D.indtrial(S.whatconditions.condlabel{i}, 'GOOD'))
+                error('No trials matched the selection.');
+            end
+            trials{i} = D.indtrial(S.whatconditions.condlabel{i}, 'GOOD');
         end
-        trials{i} = D.indtrial(S.whatconditions.condlabel{i}, 'GOOD');
+        if isempty(trials)
+            error('No trials matched the selection, check the specified condition labels');
+        end
     end
-    if isempty(trials)
-        error('No trials matched the selection, check the specified condition labels');
-    end
-end
+    
+else %%  conditions and contrast  specified in a file
+    if ~exist(cell2mat(S.isdesign.design)),
+        error('Cannot load design matrix');
+    end;
+    disp('loading design matrix');
+    a=load(cell2mat(S.isdesign.design));
+    X=a.design.X; %% design matrix
+    contrast=a.design.contrast;
+    ntrials=size(X,1);
+    if (size(a.design.Xstartlatencies,1)~=ntrials)||(size(a.design.Xtrials,1)~=ntrials) 
+        error('start latencies and Xtrials and X should have a value per row of the design');
+    end;
+    
+    trials=a.design.Xtrials; %% indices of trials to use
+    for j=1:ntrials,
+        allsamples(j,1)=D.indsample(a.design.Xstartlatencies(j));
+        allsamples(j,2)=D.indsample(a.design.Xstartlatencies(j)+a.design.Xwindowduration);
+    end;
+    
+end;
+
+%keyboard
 
 channels = D.indchantype(S.modality, 'GOOD');
 
 YY       = {};
-nsamples = unique(cellfun(@length, samples));
+nsamples = unique(allsamples(:,2)-allsamples(:,1));
 
 if length(nsamples) > 1
     error('All time windows should be equal lentgh')
@@ -202,24 +227,24 @@ if ntrials  > 100, Ibar = floor(linspace(1, ntrials ,100));
 else Ibar = 1:ntrials; end
 
 %% load in data and make up simple design matrix
-ncond=numel(samples); %% number of conditions= columns in design matrix
-Nt=ntrials*ncond; %% total number of time windows under consideration
-X=zeros(Nt,ncond);
+%ncond=numel(samples); %% number of conditions= columns in design matrix
+%Nt=ntrials*ncond; %% total number of time windows under consideration
+%X=zeros(Nt,ncond);
 
-flatdata=zeros(Nt*nsamples,Nchans);
+flatdata=zeros(ntrials*nsamples,Nchans);
 %% want flatdata in form Nchans,Nt*Nsamples
 
-count=0;
+%count=0;
 YY       = {};
 for i = 1:ntrials
-    for j = 1:numel(samples)
-        count=count+1;
-        X(count,j)=1;
-        Y  = squeeze(D(channels, samples{j}, alltrials(i)));
+    %for j = 1:numel(samples)
+     %   count=count+1;
+     %   X(count,j)=1;
+        Y  = squeeze(D(channels, allsamples(i,1):allsamples(i,2)-1, alltrials(i)));
         Y  = detrend(Y', 'constant');
-        flatdata((count-1)*nsamples+1:count*nsamples,:) =Y;
-        YY{i, j} = Y'*Y;
-    end
+        flatdata((i-1)*nsamples+1:i*nsamples,:) =Y;
+        YY{i} = Y'*Y;
+    %end
     if ismember(i, Ibar)
         spm_progress_bar('Set', i); drawnow;
     end
@@ -231,10 +256,11 @@ W = BF.inverse.W.(S.modality);
 nvert = numel(W);
 S.regressout=[]; %% turn off for now
 regressout=S.regressout;
-S.datatype='sumpower';
+
 
 %% set up the data features
-Yfull=get_data_features(flatdata,nsamples,Nt,-1,dctT,S.datatype,featureind,regressout); %% set up data structures
+weights=-1; %% set up flag
+Yfull=get_data_features(flatdata,nsamples,ntrials,weights,dctT,S.datafeatures,featureind,regressout); %% set up data structures
 
 
 
@@ -245,7 +271,7 @@ else Ibar = 1:nvert; end
 
 outval = nan(1, nvert);
 
-useind=[1:2:length(X),2:2:length(X)];
+
 for i = 1:nvert
     
     if ~isnan(W{i})
@@ -253,23 +279,24 @@ for i = 1:nvert
         w    = W{i};
         
         %% returns columns of a matrix with rows as different observations
-        [Yfull,vedata]=get_data_features(flatdata,nsamples,Nt,w,dctT,S.datatype,featureind,regressout); %% extract the data features
+        [Yfull,vedata]=get_data_features(flatdata,nsamples,ntrials,w,dctT,S.datafeatures,featureind,regressout); %% extract the data features
         
         Yfull=Yfull-repmat(mean(Yfull),size(Yfull,1),1); %% remove dc level from each column/feature
         Yfull=Yfull./repmat(std(Yfull),size(Yfull,1),1); %% normalize features to have unit variance by default
-        [chival,BIC,cva] = output_image_mv_cva(X,Yfull,S.contrast'); %% run the multivariate test
+        [chival,BIC,cva] = output_image_mv_cva(X,Yfull,contrast); %% run the multivariate test
         
         
         switch S.result
             case 'chi square'
+                resultstr='chisq';
                 outval(i) = chival(1);
             case 'r square'
                 outval(i) = cva.ccorr.^2;
+                resultstr='rsq';
             case 'BIC'
                 outval(i)=BIC(1);
-        end;
-        
-        
+                resultstr='BIC';
+        end;      
         
     end
     
@@ -283,9 +310,7 @@ spm_progress_bar('Clear');
 
 image(1).val   = outval;
 
-image(1).label = spm_file(D.fname, 'basename');
-
-
+image(1).label = ['mv' resultstr S.datafeatures freqstr  spm_file(D.fname, 'basename')];
 
 
 res = image;
