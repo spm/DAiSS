@@ -2,11 +2,12 @@
 function [trialfeatures,vedata]=get_data_features(flatpepdata,Nbins,Ntrials,weights,Tfull,datatype,featureind,regressout)
 
 %%% put data in form for mv test
-%% options are datatype=imre: evoked (real + complex per freq band)
+%% options are datatye
+%% {'peakabs','peakreal','peakimag','peaksin','peakcos','sumpower'};
 %% datatype=pwr power (re^2+comp^2)
 %% datatpe=pwrsincos: power+sin and cos terms
 %% datatype=4:
-
+%% if weights==-1 just set up static variables depnding on datatype
 %% 
 flagnames={'peakabs','peakreal','peakimag','peaksin','peakcos','sumpower'};
 
