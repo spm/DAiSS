@@ -144,28 +144,86 @@ end
 D = BF.data.D;
 
 
-if isfield(S.isdesign,'whatconditions'),
+if isfield(S.isdesign,'custom'),
     %% gui specified conditions and contrast
-    samples = {};
-    for i = 1:size(S.woi, 1)
-        samples{i} = D.indsample(S.woi(i, 1)):D.indsample(S.woi(i, 2));
-    end
     
-    if isfield(S.whatconditions, 'all')
+    samples = {};
+    woi=S.isdesign.custom.woi;
+    
+    duration=unique(woi(:,2)-woi(:,1));
+    if numel(duration)>1,
+        error('both windows need to be the same length');
+    end;
+%     for i = 1:size(woi, 1)
+%         samples{i} = D.indsample(woi(i, 1)):D.indsample(woi(i, 2));
+%     end
+%     
+    whatconditions=S.isdesign.custom.whatconditions;
+   
+    if isfield(whatconditions, 'all')
         trials{1} = 1:D.ntrials;
+        clabel{1}='all';
     else
-        for i = 1:numel(S.whatconditions.condlabel)
+        for i = 1:numel(whatconditions.condlabel)
             if isempty(D.indtrial(S.whatconditions.condlabel{i}, 'GOOD'))
                 error('No trials matched the selection.');
             end
-            trials{i} = D.indtrial(S.whatconditions.condlabel{i}, 'GOOD');
+            
+            trials{i} = D.indtrial(whatconditions.condlabel{i}, 'GOOD');
+            clabel{i}=whatconditions.condlabel{i};
         end
         if isempty(trials)
             error('No trials matched the selection, check the specified condition labels');
         end
     end
+    col=0;
+    X=[];
+    Xtrials=[];
+    Xstartlatencies=[];
+    xlabel=[];
+    for j=1:size(woi, 1),
+    for i=1:numel(trials)
+         col=col+1;
+         nt=numel(trials{i});
+         Xtmp=[zeros(size(X,1),1); ones(nt,1)];
+         if col>1,
+            X=[X;zeros(nt,1)];
+         end;
+         X=[X Xtmp];
+         Xtrials=[Xtrials ;[trials{i}]'];
+         Xstartlatencies=[Xstartlatencies; ones(nt,1).*woi(j,1)];
+         xlabel=strvcat(xlabel,[clabel{i} ',' num2str(woi(j,1))]);
+        end;
+    end;
+    
+    allsamples=[D.indsample(Xstartlatencies); D.indsample(Xstartlatencies+ones(size(Xstartlatencies)).*duration)]';
+    contrast=S.isdesign.custom.contrast';
+    
+    figure;
+    
+    subplot(4,1,1);
+    imagesc(X);
+    title('X');
+    set(gca,'Xtick',1:col);
+    set(gca,'Xticklabel',xlabel);
+    subplot(4,1,2);
+    
+    imagesc(S.isdesign.custom.contrast);
+    title('c');
+    subplot(4,1,3);
+    
+    imagesc(Xtrials);
+    title('trials');
+    subplot(4,1,4);
+    
+    imagesc(Xstartlatencies);
+    title('start latency');
+    
+    
+    
     
 else %%  conditions and contrast  specified in a file
+    
     if ~exist(cell2mat(S.isdesign.design)),
         error('Cannot load design matrix');
     end;
@@ -178,7 +236,7 @@ else %%  conditions and contrast  specified in a file
         error('start latencies and Xtrials and X should have a value per row of the design');
     end;
     
-    trials=a.design.Xtrials; %% indices of trials to use
+    Xtrials=a.design.Xtrials; %% indices of trials to use
     for j=1:ntrials,
         allsamples(j,1)=D.indsample(a.design.Xstartlatencies(j));
         allsamples(j,2)=D.indsample(a.design.Xstartlatencies(j)+a.design.Xwindowduration);
@@ -216,7 +274,7 @@ if length(nsamples) > 1
     error('All time windows should be equal lentgh')
 end
 
-alltrials = spm_vec(trials);
+alltrials = spm_vec(Xtrials);
 ntrials   = length(alltrials);
 
 
