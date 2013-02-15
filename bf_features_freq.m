@@ -123,8 +123,10 @@ end
 
 
 YY=allY*allY';
-allsvd = svd(YY);
-cumpower=cumsum(allsvd)./sum(allsvd);
+
+[U,alls] = svd(YY);
+
+cumpower=cumsum(diag(alls))./sum(diag(alls));
 nmodes99=min(find(cumpower>0.99));
 
 
@@ -132,31 +134,34 @@ spm_progress_bar('Clear');
 
 %% now for the regularisation
 
+Mopt=[];
 if isfield(S.regmethod,'bayespca'),
     switch S.regmethod.bayespca,
         case 'Minka trunc',
-            
             %%% WIll's code- based on MInka- based on trunctation to optimum model order
-            disp('Will Penny Bayes PCA to get model order');
-            [u,s]=svd(YY);
-            [M_opt,log_ev,lambda1] = spm_pca_order (allY);
-            noisevar=mean(lambda1(M_opt+1:max(find(lambda1>0)))); %% some eigenvals can come out negative
-            redYY=u(:,1:M_opt)*s(1:M_opt,1:M_opt)*u(:,1:M_opt)';
-            C=redYY;
-            
-            op_stats.truncorder=M_opt;
-            noise_id=eye(size(allY,1))*noisevar; %% noise power
+ 
+ 
+             [M_opt,log_ev,lambda1] = spm_pca_order (allY);
+             disp(sprintf('Estimated covariance matrix order %d',M_opt));
+             noisevar=mean(lambda1(M_opt+1:max(find(lambda1>0)))); %% some eigenvals can come out negative
+             redYY=U(:,1:M_opt)*alls(1:M_opt,1:M_opt)*U(:,1:M_opt)';
+             C=redYY; %% rank deficient but with full complement of channels
+             Cr=U(:,1:M_opt)'*YY*U(:,1:M_opt); %% compact version of the covariance matrix
+         
+             
+             
+             noise_id=eye(size(allY,1))*noisevar; %% noise power
         case 'Minka reg'  %% use Will's bayes pca to get noise level then use this to augment diagonal
-            
-            disp('Will Penny Bayes PCA to get noise and augment diagonal');
-            [M_opt,log_ev,lambda1] = spm_pca_order (allY);
-            noisevar=mean(lambda1(M_opt+1:max(find(lambda1>0)))); %% some eigenvals can come out negative
-            
-            opstats.eff_reg=100*noisevar./mean(allsvd);
-            disp(sprintf('effective regularisation =%3.2f percent',opstats.eff_reg));
-            C=YY+eye(size(YY,1))*noisevar;
-            
-            noise_id=eye(size(YY,1))*noisevar;
+            error('not defined yet');
+             disp('Will Penny Bayes PCA to get noise and augment diagonal');
+             [M_opt,log_ev,lambda1] = spm_pca_order (allY);
+             noisevar=mean(lambda1(M_opt+1:max(find(lambda1>0)))); %% some eigenvals can come out negative
+             
+             opstats.eff_reg=100*noisevar./mean(allsvd);
+             disp(sprintf('effective regularisation =%3.2f percent',opstats.eff_reg));
+             C=YY+eye(size(YY,1))*noisevar;
+             
+             noise_id=eye(size(YY,1))*noisevar;
     end; %% switch
 else
     %% manual choice of reg value
@@ -166,8 +171,26 @@ else
 end;
 
 Cinv=pinv(C);
-BF.data.Cinv=Cinv; %% write inverse cov to data structure
+
+features=[];
+
+features.C=C;
+features.Cinv=Cinv;
 
 
+%BF.data.Cinv=Cinv; %% write inverse cov to data structure
+%BF.data.C=C; %% write cov to data structure
 
-res = C;
+
+if ~isempty(M_opt),
+    
+    
+    features.montage.chanind=S.channels;
+    features.montage.U=U(:,1:M_opt);
+    features.montage.C=Cr;
+    features.montage.Cinv=pinv(Cr);
+end;
+    
+
+
+res = features;
