@@ -20,11 +20,12 @@ elseif nargin < 2
 end
 
 modalities = {'MEG', 'EEG'};
-
+keyboard
 for m = 1:numel(modalities)
-    if isfield(BF.features.C, modalities{m})
-        C = BF.features.C.(modalities{m});
-        
+    %if isfield(BF.features.C, modalities{m})
+    if isfield(BF.features, modalities{m})
+        C = BF.features.(modalities{m}).C;
+
         invCy =  pinv(C); % assuming already regularized
         
         L = BF.sources.L.(modalities{m});
