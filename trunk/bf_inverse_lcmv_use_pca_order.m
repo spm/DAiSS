@@ -34,11 +34,11 @@ end
 modalities = {'MEG'};
 
 for m = 1:numel(modalities)
-    if isfield(BF.features.C, modalities{m})
+    if isfield(BF.features,modalities{m})
         
         reduce_rank=BF.sources.reduce_rank.(modalities{m});
         
-        C = BF.features.C.(modalities{m});
+        C = BF.features.(modalities{m}).C;
         
         [invCy, pca_order_used] = pinv_plus(C, S.pca_order); % rank maybe not be detected properly by just using pinv - MWW
         
