@@ -175,10 +175,10 @@ switch S.result
         end
         
         spm_progress_bar('Clear');
-        
+       
         image(1).val   = pow;
         image(1).label = spm_file(D.fname, 'basename');
-        
+        image(1).label = ['uv_pow_'  spm_file(D.fname, 'basename')];
     otherwise
         error('Not implemented yet');
 end
