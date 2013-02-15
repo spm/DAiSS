@@ -66,4 +66,14 @@ lambda = (S.lambda/100) * trace(C)/size(C,1);
 
 C = C + lambda * eye(size(C));
 
-res = C;
+
+
+
+features=[];
+
+features.C=C;
+features.Cinv=pinv(C);
+
+
+res = features;
+%res = C;
