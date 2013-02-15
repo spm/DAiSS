@@ -134,7 +134,7 @@ spm_progress_bar('Clear');
 
 %% now for the regularisation
 
-Mopt=[];
+M_opt=[];
 if isfield(S.regmethod,'bayespca'),
     switch S.regmethod.bayespca,
         case 'Minka trunc',
@@ -166,7 +166,7 @@ if isfield(S.regmethod,'bayespca'),
 else
     %% manual choice of reg value
     
-    lambda = (S.lambda/100) * trace(YY)/size(YY,1);
+    lambda = (S.regmethod.lambda/100) * trace(YY)/size(YY,1);
     C= YY + lambda * eye(size(YY));    
 end;
 
