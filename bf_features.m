@@ -45,7 +45,7 @@ woi.name = 'Time window of interest';
 woi.strtype = 'r';
 woi.num = [Inf 2];
 woi.val = {[-Inf Inf]};
-woi.help = {'Time window to average over (ms)'};
+woi.help = {'Time window to average over (sec)'};
 
 %--------------------------------------------------------------------------
 % method
@@ -83,8 +83,13 @@ plugin_name = cell2mat(fieldnames(job.plugin));
 
 S         = job.plugin.(plugin_name);
 S.samples = {};
+
+
 for i = 1:size(job.woi, 1)
     S.samples{i} = D.indsample(job.woi(i, 1)):D.indsample(job.woi(i, 2));
+    if isnan(S.samples{i})
+        error('Window specified not in dataset');
+    end;
 end
 
 if isfield(job.whatconditions, 'all')
@@ -107,7 +112,10 @@ for m = 1:numel(modalities)
         end
         S.channels=chanind;
 
-        BF.features.C.(modalities{m}) = feval(['bf_features_' plugin_name], BF, S);
+        %BF.features.C.(modalities{m}) = feval(['bf_features_' plugin_name], BF, S);
+        
+        BF.features.(modalities{m}) = feval(['bf_features_' plugin_name], BF, S);
+        
     end
 end
 
