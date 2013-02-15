@@ -186,9 +186,28 @@ else %%  conditions and contrast  specified in a file
     
 end;
 
-%keyboard
 
-channels = D.indchantype(S.modality, 'GOOD');
+
+goodchannels = D.indchantype(S.modality, 'GOOD'); %% THIS SHOULD BE DONE IN THE PRE PROC STAGE
+
+W = BF.inverse.W.(S.modality);
+if numel(W{1})==length(goodchannels)
+    %% no montage used
+    U=eye(length(goodchannels));
+    chanind=goodchannels;
+else
+    if numel(W{1})==size(BF.features.(S.modality).montage.U,2),
+        U=BF.features.(S.modality).montage.U;
+        chanind=BF.features.(S.modality).montage.chanind;
+        disp('Picking up data reduction montage');
+        
+        %% data reduction montage was applied earlier
+    else
+        error('size of weights does not match number of (reduced) channels');
+    end;
+end;
+
+Nchans=size(U,2); %% effective number of channels
 
 YY       = {};
 nsamples = unique(allsamples(:,2)-allsamples(:,1));
@@ -199,7 +218,7 @@ end
 
 alltrials = spm_vec(trials);
 ntrials   = length(alltrials);
-Nchans=length(channels);
+
 
 %% now identify frequency bands of interest
 
@@ -240,10 +259,10 @@ for i = 1:ntrials
     %for j = 1:numel(samples)
      %   count=count+1;
      %   X(count,j)=1;
-        Y  = squeeze(D(channels, allsamples(i,1):allsamples(i,2)-1, alltrials(i)));
-        Y  = detrend(Y', 'constant');
+        Y  = U'*squeeze(D(chanind, allsamples(i,1):allsamples(i,2)-1, alltrials(i)));
+        Y  = detrend(Y'); %% detrend and throw away low freq drift
         flatdata((i-1)*nsamples+1:i*nsamples,:) =Y;
-        YY{i} = Y'*Y;
+        
     %end
     if ismember(i, Ibar)
         spm_progress_bar('Set', i); drawnow;
