@@ -48,6 +48,7 @@ BF = bf_load('BF.mat');
 
 plugin_name = cell2mat(fieldnames(job.plugin));
 
+BF.sources = [];
 BF.sources.(plugin_name) = feval(['bf_sources_' plugin_name], BF, job.plugin.(plugin_name));
 BF.sources.pos = BF.sources.(plugin_name).pos;
 if isfield(BF.sources.(plugin_name), 'ori')
@@ -64,15 +65,12 @@ for m = 1:numel(modalities)
     
     if isfield(BF.data, modalities{m})
         
-        %%%%%%%%
-        %MWW
         chanind = indchantype(BF.data.D, modalities{m}, 'GOOD');
         if isempty(chanind)
             error(['No good ' modalities{m} ' channels were found.']);
         end
         [vol, sens] = ft_prepare_vol_sens(BF.data.(modalities{m}).vol, BF.data.(modalities{m}).sens, 'channel', ...
             chanlabels(BF.data.D, chanind));
-        %%%%%%%%
         
         spm('Pointer', 'Watch');drawnow;
         spm_progress_bar('Init', nvert, ['Computing ' modalities{m} ' leadfields']); drawnow;
@@ -84,9 +82,7 @@ for m = 1:numel(modalities)
         for i = 1:nvert
             if (1),%ft_inside_vol(BF.sources.pos(i, :), vol) % MWW
                 
-                %L{i}  = ft_compute_leadfield(BF.sources.pos(i, :), sens,
-                %vol); %MWW
-                L{i}  = ft_compute_leadfield(BF.sources.pos(i, :), sens, vol, 'reducerank', reduce_rank(m)); %MWW
+                L{i}  = ft_compute_leadfield(BF.sources.pos(i, :), sens, vol, 'reducerank', reduce_rank(m)); 
 
                 if ~isempty(BF.sources.ori)
                     L{i}  = L{i}*BF.sources.ori(i, :)';
@@ -104,6 +100,7 @@ for m = 1:numel(modalities)
         
         BF.sources.reduce_rank.(modalities{m})=reduce_rank(m); %MWW
         BF.sources.L.(modalities{m}) = L;
+        BF.sources.channels.(modalities{m}) = chanlabels(BF.data.D, chanind);
     end
 end
 
