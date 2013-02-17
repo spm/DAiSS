@@ -22,6 +22,9 @@ end
 if nargin <= 1
     BF = load(file);
 else
+    if ~iscell(fields)
+        fields = {fields};
+    end
     BF = load(file, fields{:});
 end
 
