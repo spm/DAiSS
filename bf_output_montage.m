@@ -47,10 +47,17 @@ for m  = 1:numel(modalities)
             
             switch S.method
                 case 'max'
-                    Wc          = W* BF.features.(modalities{m}).C*W';
+                    
+                    Wc          = W* BF.features.(modalities{m}).C*W';  % bf estimated source covariance matrix
                     [dum, mi]   = max(diag(Wc));
                     montage.tra = [montage.tra; W(mi, :)];
+                    
                 case 'svd'
+                    %% just take top pca component for now
+                    Wc          = W* BF.features.(modalities{m}).C*W'; % bf estimated source covariance matrix
+                    [U,dum,dum]=svd(Wc);
+                    montage.tra=[montage.tra;U(:,1)'*W];
+                    
             end
         end
     end
