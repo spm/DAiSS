@@ -38,7 +38,7 @@ if nargin == 0
     woi.strtype = 'r';
     woi.num = [Inf 2];
     woi.val = {[-Inf Inf]};
-    woi.help = {'Time windows'};
+    woi.help = {'Time windows (in ms)'};
     
     contrast = cfg_entry;
     contrast.tag = 'contrast';
@@ -63,6 +63,14 @@ if nargin == 0
         }';
     result.val = {'singleimage'};
     
+    projectnoise         = cfg_menu;
+    projectnoise.tag     = 'projectnoise';
+    projectnoise.name    = 'Project noise';
+    projectnoise.help    = {'Project IID noise through the filters instead of true covariance'};
+    projectnoise.labels  = {'yes', 'no'};
+    projectnoise.values  = {1, 0};
+    projectnoise.val = {0};
+    
     modality         = cfg_menu;
     modality.tag     = 'modality';
     modality.name    = 'Modality';
@@ -80,7 +88,7 @@ if nargin == 0
     image_power      = cfg_branch;
     image_power.tag  = 'image_power';
     image_power.name = 'Power image';
-    image_power.val  = {whatconditions, woi, contrast, result, modality};
+    image_power.val  = {whatconditions, woi, contrast, result, projectnoise, modality};
     
     res = image_power;
     
@@ -91,24 +99,27 @@ end
 
 D = BF.data.D;
 
+S.woi = 1e-3*S.woi; % ms -> s
+
 samples = {};
 for i = 1:size(S.woi, 1)
     samples{i} = D.indsample(S.woi(i, 1)):D.indsample(S.woi(i, 2));
 end
 
 if isfield(S.whatconditions, 'all')
-    trials{1} = 1:D.ntrials;
-else
-    for i = 1:numel(S.whatconditions.condlabel)
-        if isempty(D.indtrial(S.whatconditions.condlabel{i}, 'GOOD'))
-            error('No trials matched the selection.');
-        end
-        trials{i} = D.indtrial(S.whatconditions.condlabel{i}, 'GOOD');
-    end
-    if isempty(trials)
-        error('No trials matched the selection, check the specified condition labels');
-    end
+   S.whatconditions.condlabel = D.condlist;
 end
+
+for i = 1:numel(S.whatconditions.condlabel)
+    if isempty(D.indtrial(S.whatconditions.condlabel{i}, 'GOOD'))
+        error('No trials matched the selection.');
+    end
+    trials{i} = D.indtrial(S.whatconditions.condlabel{i}, 'GOOD');
+end
+if isempty(trials)
+    error('No trials matched the selection, check the specified condition labels');
+end
+
 
 channels = D.indchantype(S.modality, 'GOOD');
 
@@ -126,67 +137,96 @@ spm_progress_bar('Init', ntrials , 'Computing covariance'); drawnow;
 if ntrials  > 100, Ibar = floor(linspace(1, ntrials ,100));
 else Ibar = 1:ntrials; end
 
-meanpower=0;
 for i = 1:ntrials
     for j = 1:numel(samples)
         Y  = squeeze(D(channels, samples{j}, alltrials(i)));
         Y  = detrend(Y', 'constant');
         YY{i, j} = Y'*Y;
-        meanpower=meanpower+mean(diag(YY{i,j}));
+        
+        if S.projectnoise
+            YY{i, j} = eye(size(YY{i,j}))*mean(diag(YY{i,j}));
+        end
     end
     if ismember(i, Ibar)
         spm_progress_bar('Set', i); drawnow;
     end
 end
-meanpower=meanpower./(ntrials*numel(samples));
-Vnoise=eye(size(YY{1,1})).*meanpower;
 
 spm_progress_bar('Clear');
 
 W = BF.inverse.W.(S.modality);
 nvert = numel(W);
 
+Cy = {};
+condind = spm_unvec(1:ntrials, trials);
+
 switch S.result
     case 'singleimage'
-        Cy = {};
         for i = 1:size(YY, 2)
-            Cy{i} = squeeze(sum(cat(3, YY{:, i}), 3))./((nsamples-1)*ntrials);
+            Cy{1, i} = squeeze(sum(cat(3, YY{:, i}), 3))./((nsamples-1)*ntrials);
         end
-        
-        spm('Pointer', 'Watch');drawnow;
-        spm_progress_bar('Init', nvert, 'Scanning grid points'); drawnow;
-        if nvert > 100, Ibar = floor(linspace(1, nvert,100));
-        else Ibar = 1:nvert; end
-        
-        pow = nan(1, nvert);
-        cpow = zeros(1, numel(Cy));
-        
-        for i = 1:nvert
-            if ~isnan(W{i})
-                w    = W{i};
-                
-                for j = 1:numel(Cy)
-                    cpow(j) = w*Cy{j}*w';
-                end
-                
-                pow(i) = cpow*S.contrast';
-                %pow(i)=pow(i)./(w*Vnoise*w');
-                
+    case 'bycondition';
+        for c = 1:numel(condind)
+            for i = 1:size(YY, 2)
+                Cy{c, i} = squeeze(sum(cat(3, YY{condind{c}, i}), 3))./((nsamples-1)*length(condind{c}));
             end
-            
-            if ismember(i, Ibar)
-                spm_progress_bar('Set', i); drawnow;
+        end
+    case 'bytrial'
+        for c = 1:ntrials
+            for i = 1:size(YY, 2)
+                Cy{c, i} = YY{c, i}./(nsamples-1);
             end
         end
         
-        spm_progress_bar('Clear');
-       
-        image(1).val   = pow;
-        image(1).label = spm_file(D.fname, 'basename');
-        image(1).label = ['uv_pow_'  spm_file(D.fname, 'basename')];
-    otherwise
-        error('Not implemented yet');
 end
 
+spm('Pointer', 'Watch');drawnow;
+
+for c = 1:size(Cy, 1)
+    spm_progress_bar('Init', nvert, ...
+        sprintf('Scanning grid points image %d/%d', c, size(Cy, 1))); drawnow;
+    if nvert > 100, Ibar = floor(linspace(1, nvert,100));
+    else Ibar = 1:nvert; end
+    
+    pow = nan(1, nvert);
+    cpow = zeros(1, numel(Cy(c, :)));
+    
+    for i = 1:nvert
+        if ~isnan(W{i})
+            w    = W{i};
+            
+            for j = 1:numel(Cy(c, :))
+                cpow(j) = w*Cy{c, j}*w';
+            end
+            
+            pow(i) = cpow*S.contrast';
+        end
+        
+        if ismember(i, Ibar)
+            spm_progress_bar('Set', i); drawnow;
+        end
+    end
+    
+    spm_progress_bar('Clear');
+    
+    image(c).val   = pow;
+    
+    switch S.result
+        case 'singleimage'
+            image(c).label = ['uv_pow_'  spm_file(D.fname, 'basename')];
+        case 'bycondition'
+            image(c).label = ['uv_pow_cond_' S.whatconditions.condlabel{c} '_' spm_file(D.fname, 'basename')];
+        case 'bytrial'
+            for k = 1:numel(condind)
+                if any(c == condind{k})
+                    break;
+                end
+            end            
+            image(c).label = ['uv_pow_cond_' S.whatconditions.condlabel{k}...
+                '_trial_' num2str(alltrials(c)) '_' spm_file(D.fname, 'basename')];
+    end        
+end
+
+spm('Pointer', 'Arrow');drawnow;
 
 res = image;
