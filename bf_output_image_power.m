@@ -126,16 +126,20 @@ spm_progress_bar('Init', ntrials , 'Computing covariance'); drawnow;
 if ntrials  > 100, Ibar = floor(linspace(1, ntrials ,100));
 else Ibar = 1:ntrials; end
 
+meanpower=0;
 for i = 1:ntrials
     for j = 1:numel(samples)
         Y  = squeeze(D(channels, samples{j}, alltrials(i)));
         Y  = detrend(Y', 'constant');
         YY{i, j} = Y'*Y;
+        meanpower=meanpower+mean(diag(YY{i,j}));
     end
     if ismember(i, Ibar)
         spm_progress_bar('Set', i); drawnow;
     end
 end
+meanpower=meanpower./(ntrials*numel(samples));
+Vnoise=eye(size(YY{1,1})).*meanpower;
 
 spm_progress_bar('Clear');
 
@@ -166,6 +170,7 @@ switch S.result
                 end
                 
                 pow(i) = cpow*S.contrast';
+                %pow(i)=pow(i)./(w*Vnoise*w');
                 
             end
             
