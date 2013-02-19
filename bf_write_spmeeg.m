@@ -119,4 +119,4 @@ if usemontage
     D = spm_eeg_montage(S1);
 end
 
-res = fullfile(D);
+res.files = {fullfile(D)};
