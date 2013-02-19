@@ -54,14 +54,19 @@ BF.write.(outfield_name) = feval(['bf_write_' plugin_name], BF, job.plugin.(plug
 bf_save(BF);
 
 out.BF{1} = fullfile(outdir, 'BF.mat');
+out.files = BF.write.(outfield_name).files;
 end
 
 function dep = bf_write_vout(job)
 % Output is always in field "D", no matter how job is structured
-dep = cfg_dep;
-dep.sname = 'BF.mat file';
+dep(1) = cfg_dep;
+dep(1).sname = 'BF.mat file';
 % reference field "B" from output
-dep.src_output = substruct('.','BF');
+dep(1).src_output = substruct('.','BF');
 % this can be entered into any evaluated input
-dep.tgt_spec   = cfg_findspec({{'filter','mat'}});
+dep(1).tgt_spec   = cfg_findspec({{'filter','mat'}});
+
+dep(1).sname      = 'Output files';
+dep(1).src_output = substruct('.','files');
+%dep(1).tgt_spec   = cfg_findspec({{'filter','image','strtype','e'}});
 end
