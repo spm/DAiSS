@@ -1,6 +1,6 @@
 function res = bf_write_nifti(BF, S)
 % Writes out nifti images of beamformer results
-% Copyright (C) 2012 Wellcome Trust Centre for Neuroimaging
+% Copyright (C) 2013 Wellcome Trust Centre for Neuroimaging
 
 % Vladimir Litvak
 % $Id$
@@ -51,21 +51,6 @@ elseif nargin < 2
     error('Two input arguments are required');
 end
 
-source     = BF.sources.grid;
-source.pos   = BF.sources.pos;
-
-switch S.space
-    case 'mni'
-        sMRI   = fullfile(spm('dir'), 'canonical', 'single_subj_T1.nii');
-        source = ft_transform_geometry(BF.data.transforms.toMNI, source);
-    case 'aligned'
-        source = ft_transform_geometry(BF.data.transforms.toMNI_aligned, source);
-        sMRI   = fullfile(spm('dir'), 'canonical', 'single_subj_T1.nii');
-    case 'native'
-        source = ft_transform_geometry(BF.data.transforms.toNative, source);
-        sMRI   = BF.data.mesh.sMRI;
-end
-
 scale = ones(1, numel(BF.output.image));
 switch S.normalise
     case  'separate'
@@ -78,18 +63,60 @@ switch S.normalise
         scale = scale./mean(val(~isnan(val)));
 end
 
+switch S.space
+    case 'mni'
+        sMRI   = fullfile(spm('dir'), 'canonical', 'single_subj_T1.nii');
+    case 'aligned'
+        sMRI   = fullfile(spm('dir'), 'canonical', 'single_subj_T1.nii');
+    case 'native'
+        sMRI   = BF.data.mesh.sMRI;
+end
+
+if isfield(BF.sources, 'grid')
+    sourcespace = 'grid';
+    
+    source     = BF.sources.grid;
+    source.pos   = BF.sources.pos;
+    
+    switch S.space
+        case 'mni'
+            source = ft_transform_geometry(BF.data.transforms.toMNI, source);
+        case 'aligned'
+            source = ft_transform_geometry(BF.data.transforms.toMNI_aligned, source);
+        case 'native'
+            source = ft_transform_geometry(BF.data.transforms.toNative, source);
+    end
+    
+    cfg = [];
+    cfg.parameter = 'pow';
+    cfg.downsample = 1;
+    cfg.showcallinfo = 'no';
+    
+elseif isfield(BF.sources, 'mesh')
+    sourcespace = 'mesh';
+    
+    switch S.space
+        case 'mni'
+            source = BF.sources.mesh.canonical;
+        case 'aligned'
+            source = BF.sources.mesh.individual;
+            source.vert =  spm_eeg_inv_transform_points(BF.data.transforms.toMNI_aligned, source.vert);
+        case 'native'
+            source = BF.sources.mesh.individual;
+            source.vert =  spm_eeg_inv_transform_points(BF.data.transforms.toNative, source.vert);
+    end
+    
+    source = export(gifti(source), 'patch');
+else
+    error('Unsupported source space type');
+end
+
 
 outvol = spm_vol(sMRI);
-%
 outvol.dt(1) = spm_type('float32');
 
 
 nimages = numel(BF.output.image);
-
-cfg = [];
-cfg.parameter = 'pow';
-cfg.downsample = 1;
-cfg.showcallinfo = 'no';
 
 spm('Pointer', 'Watch');drawnow;
 spm_progress_bar('Init', nimages , 'Writing out images'); drawnow;
@@ -98,12 +125,22 @@ else Ibar = 1:nimages; end
 
 
 for i = 1:nimages
-    source.pow = scale(i)*BF.output.image(i).val;
-    sourceint = ft_sourceinterpolate(cfg, source, ft_read_mri(sMRI, 'format', 'nifti_spm'));
-    
     outvol.fname= fullfile(pwd, [BF.output.image(i).label '.nii']);
     outvol = spm_create_vol(outvol);
-    spm_write_vol(outvol, sourceint.pow);
+    
+    source.pow = scale(i)*BF.output.image(i).val;
+    
+    switch sourcespace
+        case 'grid'
+            sourceint = ft_sourceinterpolate(cfg, source, ft_read_mri(sMRI, 'format', 'nifti_spm'));
+            Y = sourceint.pow;
+        case 'mesh'
+            Y = spm_mesh_to_grid(source, outvol, source.pow(:));
+            spm_smooth(Y, Y, 1);
+            Y = Y.*(Y > max(source.pow)*exp(-8));
+    end
+    
+    spm_write_vol(outvol, Y);
     
     nifti.files{i, 1} = outvol.fname;
     
