@@ -90,6 +90,8 @@ for i = 1:nimages
     
     source.cdata = scale(i)*BF.output.image(i).val;
     
+    source.cdata = source.cdata(:);
+    
     save(gifti(source), fname);
             
     res.files{i, 1} = fname;
