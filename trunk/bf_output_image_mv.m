@@ -140,7 +140,7 @@ end
 
 
 
-%keyboard;
+
 D = BF.data.D;
 
 
@@ -154,18 +154,16 @@ if isfield(S.isdesign,'custom'),
     if numel(duration)>1,
         error('both windows need to be the same length');
     end;
-%     for i = 1:size(woi, 1)
-%         samples{i} = D.indsample(woi(i, 1)):D.indsample(woi(i, 2));
-%     end
-%     
+    
+    %
     whatconditions=S.isdesign.custom.whatconditions;
-   
+    
     if isfield(whatconditions, 'all')
         trials{1} = 1:D.ntrials;
         clabel{1}='all';
     else
         for i = 1:numel(whatconditions.condlabel)
-            if isempty(D.indtrial(S.whatconditions.condlabel{i}, 'GOOD'))
+            if isempty(D.indtrial(whatconditions.condlabel{i}, 'GOOD'))
                 error('No trials matched the selection.');
             end
             
@@ -182,42 +180,23 @@ if isfield(S.isdesign,'custom'),
     Xstartlatencies=[];
     xlabel=[];
     for j=1:size(woi, 1),
-    for i=1:numel(trials)
-         col=col+1;
-         nt=numel(trials{i});
-         Xtmp=[zeros(size(X,1),1); ones(nt,1)];
-         if col>1,
-            X=[X;zeros(nt,1)];
-         end;
-         X=[X Xtmp];
-         Xtrials=[Xtrials ;[trials{i}]'];
-         Xstartlatencies=[Xstartlatencies; ones(nt,1).*woi(j,1)];
-         xlabel=strvcat(xlabel,[clabel{i} ',' num2str(woi(j,1))]);
+        for i=1:numel(trials)
+            col=col+1;
+            nt=numel(trials{i});
+            Xtmp=[zeros(size(X,1),1); ones(nt,1)];
+            if col>1,
+                X=[X;zeros(nt,1)];
+            end;
+            X=[X Xtmp];
+            Xtrials=[Xtrials ;[trials{i}]];
+            Xstartlatencies=[Xstartlatencies; ones(nt,1).*woi(j,1)];
+            xlabel=strvcat(xlabel,[clabel{i} ',' num2str(woi(j,1))]);
         end;
     end;
     
     allsamples=[D.indsample(Xstartlatencies); D.indsample(Xstartlatencies+ones(size(Xstartlatencies)).*duration)]';
     contrast=S.isdesign.custom.contrast';
     
-    figure;
-    
-    subplot(4,1,1);
-    imagesc(X);
-    title('X');
-    set(gca,'Xtick',1:col);
-    set(gca,'Xticklabel',xlabel);
-    subplot(4,1,2);
-    
-    imagesc(S.isdesign.custom.contrast);
-    title('c');
-    subplot(4,1,3);
-    
-    imagesc(Xtrials);
-    title('trials');
-    subplot(4,1,4);
-    
-    imagesc(Xstartlatencies);
-    title('start latency');
     
     
     
@@ -232,7 +211,7 @@ else %%  conditions and contrast  specified in a file
     X=a.design.X; %% design matrix
     contrast=a.design.contrast;
     ntrials=size(X,1);
-    if (size(a.design.Xstartlatencies,1)~=ntrials)||(size(a.design.Xtrials,1)~=ntrials) 
+    if (size(a.design.Xstartlatencies,1)~=ntrials)||(size(a.design.Xtrials,1)~=ntrials)
         error('start latencies and Xtrials and X should have a value per row of the design');
     end;
     
@@ -243,6 +222,37 @@ else %%  conditions and contrast  specified in a file
     end;
     
 end;
+
+
+if size(Xtrials)~=size(Xstartlatencies)
+    error('Xtrials and start latencies must be the same length');
+end;
+if size(Xtrials,1)~=size(X,1)
+    error('X must have same number of rows as trials and start latencies');
+end;
+if size(contrast,1)~=size(X,2),
+    error('contrast needs to match number of columns in design');
+end;
+
+
+figure;
+subplot(4,1,1);
+imagesc(X);
+title('X');
+set(gca,'Xtick',1:col);
+set(gca,'Xticklabel',xlabel);
+subplot(4,1,2);
+
+imagesc(contrast);
+title('c');
+subplot(4,1,3);
+
+imagesc(Xtrials);
+title('trials');
+subplot(4,1,4);
+
+imagesc(Xstartlatencies);
+title('start latency');
 
 
 
@@ -315,12 +325,12 @@ flatdata=zeros(ntrials*nsamples,Nchans);
 YY       = {};
 for i = 1:ntrials
     %for j = 1:numel(samples)
-     %   count=count+1;
-     %   X(count,j)=1;
-        Y  = U'*squeeze(D(chanind, allsamples(i,1):allsamples(i,2)-1, alltrials(i)));
-        Y  = detrend(Y'); %% detrend and throw away low freq drift
-        flatdata((i-1)*nsamples+1:i*nsamples,:) =Y;
-        
+    %   count=count+1;
+    %   X(count,j)=1;
+    Y  = U'*squeeze(D(chanind, allsamples(i,1):allsamples(i,2)-1, alltrials(i)));
+    Y  = detrend(Y'); %% detrend and throw away low freq drift
+    flatdata((i-1)*nsamples+1:i*nsamples,:) =Y;
+    
     %end
     if ismember(i, Ibar)
         spm_progress_bar('Set', i); drawnow;
@@ -373,7 +383,7 @@ for i = 1:nvert
             case 'BIC'
                 outval(i)=BIC(1);
                 resultstr='BIC';
-        end;      
+        end;
         
     end
     
