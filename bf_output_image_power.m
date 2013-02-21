@@ -107,7 +107,7 @@ for i = 1:size(S.woi, 1)
 end
 
 if isfield(S.whatconditions, 'all')
-   S.whatconditions.condlabel = D.condlist;
+    S.whatconditions.condlabel = D.condlist;
 end
 
 for i = 1:numel(S.whatconditions.condlabel)
@@ -137,20 +137,19 @@ spm_progress_bar('Init', ntrials , 'Computing covariance'); drawnow;
 if ntrials  > 100, Ibar = floor(linspace(1, ntrials ,100));
 else Ibar = 1:ntrials; end
 
+sumYY=zeros(length(channels));
 for i = 1:ntrials
     for j = 1:numel(samples)
         Y  = squeeze(D(channels, samples{j}, alltrials(i)));
         Y  = detrend(Y', 'constant');
         YY{i, j} = Y'*Y;
-        
-        if S.projectnoise
-            YY{i, j} = eye(size(YY{i,j}))*mean(diag(YY{i,j}));
-        end
+        sumYY=sumYY+YY{i,j};
     end
     if ismember(i, Ibar)
         spm_progress_bar('Set', i); drawnow;
     end
 end
+sumYY=sumYY./(numel(samples)*ntrials);
 
 spm_progress_bar('Clear');
 
@@ -181,6 +180,16 @@ switch S.result
 end
 
 spm('Pointer', 'Watch');drawnow;
+if S.projectnoise
+    [sigma]=svd(sumYY);
+    
+    disp('Using spm_pca_order to get noise estimate');
+    [M_opt,log_ev] = spm_pca_order (sumYY);
+    
+    noise=eye(length(channels)).*sum(sigma(M_opt:end))./length(channels); 
+    
+    
+end
 
 for c = 1:size(Cy, 1)
     spm_progress_bar('Init', nvert, ...
@@ -197,6 +206,10 @@ for c = 1:size(Cy, 1)
             
             for j = 1:numel(Cy(c, :))
                 cpow(j) = w*Cy{c, j}*w';
+                if S.projectnoise
+                    np=w*noise*w';
+                    cpow(j)=cpow(j)./np;
+                end
             end
             
             pow(i) = cpow*S.contrast';
@@ -221,10 +234,11 @@ for c = 1:size(Cy, 1)
                 if any(c == condind{k})
                     break;
                 end
-            end            
+            end
             image(c).label = ['uv_pow_cond_' S.whatconditions.condlabel{k}...
                 '_trial_' num2str(alltrials(c)) '_' spm_file(D.fname, 'basename')];
-    end        
+    end
+    
 end
 
 spm('Pointer', 'Arrow');drawnow;
