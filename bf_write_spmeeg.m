@@ -98,6 +98,8 @@ if isfield(BF.output, 'montage')
         na = numel(addchannels);
         montage.tra((end+1):(end+na), (end+1):(end+na)) = eye(na);
     end
+else
+    error('Unsupported option');
 end
 
 if usemontage

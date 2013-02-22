@@ -65,8 +65,17 @@ dep(1).sname = 'BF.mat file';
 dep(1).src_output = substruct('.','BF');
 % this can be entered into any evaluated input
 dep(1).tgt_spec   = cfg_findspec({{'filter','mat'}});
+dep(2).sname      = 'Output files';
+dep(2).src_output = substruct('.','files');
 
-dep(1).sname      = 'Output files';
-dep(1).src_output = substruct('.','files');
-%dep(1).tgt_spec   = cfg_findspec({{'filter','image','strtype','e'}});
+plugin_name   = cell2mat(fieldnames(job.plugin));
+
+switch plugin_name
+    case 'spmeeg'
+        dep(2).tgt_spec   = cfg_findspec({{'filter','mat','strtype','e'}});
+    case 'nifti'
+        dep(2).tgt_spec   = cfg_findspec({{'filter','image','strtype','e'}});
+    case 'gifti'
+        dep(2).tgt_spec   = cfg_findspec({{'filter','mesh','strtype','e'}});
+end
 end
