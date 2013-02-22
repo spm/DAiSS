@@ -76,7 +76,7 @@ switch S.space
         source.vert =  spm_eeg_inv_transform_points(BF.data.transforms.toNative, source.vert);
 end
 
-source = export(gifti(source), 'patch');
+save(gifti(source), [BF.data.D.fname '.surf.gii']);
 
 nimages = numel(BF.output.image);
 
@@ -88,11 +88,15 @@ else Ibar = 1:nimages; end
 for i = 1:nimages
     fname = fullfile(pwd, [BF.output.image(i).label '.gii']);
     
-    source.cdata = scale(i)*BF.output.image(i).val;
+    G = gifti;
+    G.private.metadata(1).name = 'SurfaceID';
+    G.private.metadata(1).value = [BF.data.D.fname '.surf.gii'];
     
-    source.cdata = source.cdata(:);
+    G.cdata = scale(i)*BF.output.image(i).val;
     
-    save(gifti(source), fname);
+    G.cdata = G.cdata(:);
+    
+    save(G, fname, 'ExternalFileBinary');
             
     res.files{i, 1} = fname;
     
@@ -102,4 +106,3 @@ for i = 1:nimages
 end
 
 spm_progress_bar('Clear');
-
