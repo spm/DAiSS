@@ -111,8 +111,6 @@ for m = 1:numel(modalities)
             error(['No good ' modalities{m} ' channels were found.']);
         end
         S.channels=chanind;
-
-        %BF.features.C.(modalities{m}) = feval(['bf_features_' plugin_name], BF, S);
         
         BF.features.(modalities{m}) = feval(['bf_features_' plugin_name], BF, S);
         
