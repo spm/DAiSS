@@ -235,7 +235,8 @@ if size(contrast,1)~=size(X,2),
 end;
 
 
-figure;
+Fgraph  = spm_figure('GetWin','Graphics'); spm_figure('Clear',Fgraph);
+
 subplot(4,1,1);
 imagesc(X);
 title('X');
