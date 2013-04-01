@@ -41,11 +41,11 @@ whatconditions.val = {all};
 
 woi = cfg_entry;
 woi.tag = 'woi';
-woi.name = 'Time window of interest';
+woi.name = 'Time window(s) of interest';
 woi.strtype = 'r';
 woi.num = [Inf 2];
 woi.val = {[-Inf Inf]};
-woi.help = {'Time window to average over (sec)'};
+woi.help = {'Time window(s) to average over (ms)'};
 
 %--------------------------------------------------------------------------
 % method
@@ -86,7 +86,7 @@ S.samples = {};
 
 
 for i = 1:size(job.woi, 1)
-    S.samples{i} = D.indsample(job.woi(i, 1)):D.indsample(job.woi(i, 2));
+    S.samples{i} = D.indsample(1e-3*job.woi(i, 1)):D.indsample(1e-3*job.woi(i, 2));
     if isnan(S.samples{i})
         error('Window specified not in dataset');
     end;
