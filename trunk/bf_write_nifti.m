@@ -72,11 +72,20 @@ switch S.space
         sMRI   = BF.data.mesh.sMRI;
 end
 
-if isfield(BF.sources, 'grid')
-    sourcespace = 'grid';
+if isfield(BF.sources, 'grid') || isfield(BF.sources, 'voi')       
+    if isfield(BF.sources, 'grid')
+        sourcespace    = 'grid';
+        source         = BF.sources.grid;
+        source.pos     = BF.sources.pos;
+    else
+        sourcespace    = 'voi';
+        source         = [];
+        source.pos     = BF.sources.pos;
+        source.inside  = 1:size(BF.sources.pos, 1);
+        source.outside = [];
+    end
     
-    source     = BF.sources.grid;
-    source.pos   = BF.sources.pos;
+
     
     switch S.space
         case 'mni'
@@ -130,14 +139,22 @@ for i = 1:nimages
     
     source.pow = scale(i)*BF.output.image(i).val;
     
+    source.pow = source.pow(:);
+    
     switch sourcespace
         case 'grid'
             sourceint = ft_sourceinterpolate(cfg, source, ft_read_mri(sMRI, 'format', 'nifti_spm'));
             Y = sourceint.pow;
         case 'mesh'
-            Y = spm_mesh_to_grid(source, outvol, source.pow(:));
+            Y = spm_mesh_to_grid(source, outvol, source.pow);
             spm_smooth(Y, Y, 1);
             Y = Y.*(Y > max(source.pow)*exp(-8));
+        case 'voi'
+            cfg.interpmethod = 'sphere_avg';
+            cfg.sphereradius = 5;
+            sourceint = ft_sourceinterpolate(cfg, source, ft_read_mri(sMRI, 'format', 'nifti_spm'));
+            Y = sourceint.pow;
+            Y = reshape(Y, sourceint.dim);
     end
     
     spm_write_vol(outvol, Y);
