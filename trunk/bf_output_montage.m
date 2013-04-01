@@ -60,6 +60,15 @@ for m  = 1:numel(modalities)
                     
             end
         end
+    else
+        mnipos = spm_eeg_inv_transform_points(BF.data.transforms.toMNI, BF.sources.pos);
+        for i = 1:size(mnipos, 1)
+            w = BF.inverse.W.(modalities{m}){i};
+            if ~isnan(w)
+                montage.labelnew{i} = sprintf('%d_%d_%d', round(mnipos(i, :)));
+                montage.tra = [montage.tra; w];
+            end
+        end
     end
     
     mont.(modalities{m}) = montage;
