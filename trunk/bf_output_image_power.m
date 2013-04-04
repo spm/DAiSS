@@ -63,6 +63,14 @@ if nargin == 0
         }';
     result.val = {'singleimage'};
     
+    scale         = cfg_menu;
+    scale.tag     = 'scale';
+    scale.name    = 'Scale power by filter norm';
+    scale.help    = {'Scale power by norm of the filters'};
+    scale.labels  = {'yes', 'no'};
+    scale.values  = {1, 0};
+    scale.val = {1};
+    
     modality         = cfg_menu;
     modality.tag     = 'modality';
     modality.name    = 'Modality';
@@ -80,7 +88,7 @@ if nargin == 0
     image_power      = cfg_branch;
     image_power.tag  = 'image_power';
     image_power.name = 'Power image';
-    image_power.val  = {whatconditions, woi, contrast, result, modality};
+    image_power.val  = {whatconditions, woi, contrast, result, scale, modality};
     
     res = image_power;
     
@@ -172,14 +180,16 @@ switch S.result
 end
 
 spm('Pointer', 'Watch');drawnow;
-
-[sigma]=svd(sumYY);
-
-disp('Using spm_pca_order to get scaling factor');
-[M_opt, log_ev] = spm_pca_order (sumYY);
-
-scale = eye(length(channels)).*sum(sigma(M_opt:end))./length(channels);
+if S.scale
     
+    [sigma]=svd(sumYY);
+    
+    disp('Using spm_pca_order to get scaling factor');
+    [M_opt,log_ev] = spm_pca_order (sumYY);
+    
+    scale = eye(length(channels)).*sum(sigma(M_opt:end))./length(channels);         
+end
+
 for c = 1:size(Cy, 1)
     spm_progress_bar('Init', nvert, ...
         sprintf('Scanning grid points image %d/%d', c, size(Cy, 1))); drawnow;
@@ -194,7 +204,12 @@ for c = 1:size(Cy, 1)
             w    = W{i};
             
             for j = 1:numel(Cy(c, :))
-                cpow(j) = (w*Cy{c, j}*w')/(w*scale*w');                               
+                cpow(j) = w*Cy{c, j}*w';
+                
+                if S.scale
+                    np=w*noise*w';
+                    cpow(j)=cpow(j)./np;
+                end
             end
             
             pow(i) = cpow*S.contrast';
