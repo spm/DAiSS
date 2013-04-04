@@ -63,14 +63,6 @@ if nargin == 0
         }';
     result.val = {'singleimage'};
     
-    projectnoise         = cfg_menu;
-    projectnoise.tag     = 'projectnoise';
-    projectnoise.name    = 'Project noise';
-    projectnoise.help    = {'Project IID noise through the filters instead of true covariance'};
-    projectnoise.labels  = {'yes', 'no'};
-    projectnoise.values  = {1, 0};
-    projectnoise.val = {0};
-    
     modality         = cfg_menu;
     modality.tag     = 'modality';
     modality.name    = 'Modality';
@@ -88,7 +80,7 @@ if nargin == 0
     image_power      = cfg_branch;
     image_power.tag  = 'image_power';
     image_power.name = 'Power image';
-    image_power.val  = {whatconditions, woi, contrast, result, projectnoise, modality};
+    image_power.val  = {whatconditions, woi, contrast, result, modality};
     
     res = image_power;
     
@@ -180,17 +172,14 @@ switch S.result
 end
 
 spm('Pointer', 'Watch');drawnow;
-if S.projectnoise
-    [sigma]=svd(sumYY);
-    
-    disp('Using spm_pca_order to get noise estimate');
-    [M_opt,log_ev] = spm_pca_order (sumYY);
-    
-    noise=eye(length(channels)).*sum(sigma(M_opt:end))./length(channels); 
-    
-    
-end
 
+[sigma]=svd(sumYY);
+
+disp('Using spm_pca_order to get scaling factor');
+[M_opt, log_ev] = spm_pca_order (sumYY);
+
+scale = eye(length(channels)).*sum(sigma(M_opt:end))./length(channels);
+    
 for c = 1:size(Cy, 1)
     spm_progress_bar('Init', nvert, ...
         sprintf('Scanning grid points image %d/%d', c, size(Cy, 1))); drawnow;
@@ -205,11 +194,7 @@ for c = 1:size(Cy, 1)
             w    = W{i};
             
             for j = 1:numel(Cy(c, :))
-                cpow(j) = w*Cy{c, j}*w';
-                if S.projectnoise
-                    np=w*noise*w';
-                    cpow(j)=cpow(j)./np;
-                end
+                cpow(j) = (w*Cy{c, j}*w')/(w*scale*w');                               
             end
             
             pow(i) = cpow*S.contrast';
