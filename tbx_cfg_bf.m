@@ -8,7 +8,10 @@ function bf = tbx_cfg_bf
 
 tbxdir = fileparts(mfilename('fullpath'));
 
-if ~isdeployed, addpath(tbxdir); end
+if ~isdeployed,
+    addpath(tbxdir);
+    addpath(fullfile(spm('Dir'),'toolbox', 'mlm'));
+end
 
 components = {
     'bf_data';
