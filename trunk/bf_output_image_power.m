@@ -207,7 +207,7 @@ for c = 1:size(Cy, 1)
                 cpow(j) = w*Cy{c, j}*w';
                 
                 if S.scale
-                    np=w*noise*w';
+                    np=w*scale*w';
                     cpow(j)=cpow(j)./np;
                 end
             end
