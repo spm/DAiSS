@@ -35,6 +35,8 @@ end
 modalities = fieldnames(BF.sources.L);
 
 for m  = 1:numel(modalities)    
+    U        = BF.features.(modalities{m}).U; 
+        
     montage          = [];
     montage.labelorg = BF.sources.channels.(modalities{m});
     montage.labelorg = montage.labelorg(:);
@@ -50,13 +52,13 @@ for m  = 1:numel(modalities)
                     
                     Wc          = W* BF.features.(modalities{m}).C*W';  % bf estimated source covariance matrix
                     [dum, mi]   = max(diag(Wc));
-                    montage.tra = [montage.tra; W(mi, :)];
+                    montage.tra = [montage.tra; W(mi, :)*U'];
                     
                 case 'svd'
                     %% just take top pca component for now
                     Wc          = W* BF.features.(modalities{m}).C*W'; % bf estimated source covariance matrix
-                    [U,dum,dum]=svd(Wc);
-                    montage.tra=[montage.tra;U(:,1)'*W];
+                    [V,dum,dum]=svd(Wc);
+                    montage.tra=[montage.tra;V(:,1)'*W*U'];
                     
             end
         end
@@ -66,7 +68,7 @@ for m  = 1:numel(modalities)
             w = BF.inverse.W.(modalities{m}){i};
             if ~isnan(w)
                 montage.labelnew{i} = sprintf('%d_%d_%d', round(mnipos(i, :)));
-                montage.tra = [montage.tra; w];
+                montage.tra = [montage.tra; w*U'];
             end
         end
     end

@@ -22,14 +22,6 @@ if nargin == 0
     taper.labels = {'Hanning', 'Rectangular', 'DPSS', 'Sine'};
     taper.values = {'hanning', 'rectwin', 'dpss', 'sine'};
     taper.val = {'dpss'};
-    
-    lambda = cfg_entry;
-    lambda.tag = 'lambda';
-    lambda.name = 'Regularisation';
-    lambda.strtype = 'r';
-    lambda.num = [1 1];
-    lambda.val = {0};
-    lambda.help = {'Select the regularisation (in %)'};
             
     keepreal = cfg_menu;
     keepreal.tag = 'keepreal';
@@ -42,7 +34,7 @@ if nargin == 0
     csd      = cfg_branch;
     csd.tag  = 'csd';
     csd.name = 'Cross-spectral density';
-    csd.val  = {foi, taper, lambda, keepreal};
+    csd.val  = {foi, taper, keepreal};
     
     res = csd;
     
@@ -85,19 +77,15 @@ spm_progress_bar('Clear');
 
 Cf = Cf/ntrials;
 
-lambda = (S.lambda/100) * trace(Cf)/size(Cf,1);
-
 if S.keepreal
     % the filter is computed using only the leadfield and the inverse covariance or CSD matrix
     % therefore using the real-valued part of the CSD matrix here ensures a real-valued filter
-    invCf = pinv(real(Cf) + lambda * eye(size(Cf)));
-else
-    invCf = pinv(Cf + lambda * eye(size(Cf)));
+    Cf = real(Cf);
 end
 
 features=[];
 
 features.C    = Cf;
-features.Cinv = invCf;
+features.N    = ntap*ntrials;
 
 res = features;

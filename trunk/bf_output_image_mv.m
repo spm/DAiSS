@@ -255,30 +255,11 @@ subplot(4,1,4);
 imagesc(Xstartlatencies);
 title('start latency');
 
-
-
-goodchannels = D.indchantype(S.modality, 'GOOD'); %% THIS SHOULD BE DONE IN THE PRE PROC STAGE
-
-W = BF.inverse.W.(S.modality);
-if numel(W{1})==length(goodchannels)
-    %% no montage used
-    U=eye(length(goodchannels));
-    chanind=goodchannels;
-else
-    if numel(W{1})==size(BF.features.(S.modality).montage.U,2),
-        U=BF.features.(S.modality).montage.U;
-        chanind=BF.features.(S.modality).montage.chanind;
-        disp('Picking up data reduction montage');
-        
-        %% data reduction montage was applied earlier
-    else
-        error('size of weights does not match number of (reduced) channels');
-    end;
-end;
+chanind = BF.features.(S.modality).chanind;
+U       = BF.features.(S.modality).U;
 
 Nchans=size(U,2); %% effective number of channels
 
-YY       = {};
 nsamples = unique(allsamples(:,2)-allsamples(:,1));
 
 if length(nsamples) > 1
@@ -323,7 +304,6 @@ flatdata=zeros(ntrials*nsamples,Nchans);
 %% want flatdata in form Nchans,Nt*Nsamples
 
 %count=0;
-YY       = {};
 for i = 1:ntrials
     %for j = 1:numel(samples)
     %   count=count+1;

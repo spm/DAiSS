@@ -6,12 +6,11 @@ function res = bf_inverse_lcmv(BF, S)
 % $Id$
 
 %--------------------------------------------------------------------------
-if nargin == 0      
-    lcmv      = cfg_branch;
+if nargin == 0
+    lcmv      = cfg_const;
     lcmv.tag  = 'lcmv';
     lcmv.name = 'LCMV';
-    lcmv.val  = {};
-    
+    lcmv.val  = {};    
     res = lcmv;
     
     return
@@ -21,15 +20,14 @@ end
 
 modalities = {'MEG', 'EEG'};
 
-
-for m = 1:numel(modalities)
+for m = 1:numel(modalities)        
     if isfield(BF.features, modalities{m})
-        C = BF.features.(modalities{m}).C;
-
-        invCy =  pinv(C); % assuming already regularized
+        invCy =  BF.features.(modalities{m}).Cinv;
+        U     = BF.features.(modalities{m}).U;
+        
+        reduce_rank = BF.sources.reduce_rank.(modalities{m});
         
         L = BF.sources.L.(modalities{m});
-        
         W = cell(size(L));
         
         nvert = numel(W);
@@ -41,24 +39,20 @@ for m = 1:numel(modalities)
         
         for i = 1:nvert
             if ~isnan(L{i})
-                lf    = L{i};                
-                
-                % FIXME: The original 'pinv' in matlab does not necessarily work here. Roberts uses a pinv with 10 times bigger tol and Mark has his own pinv. 
-                % I would recommend to write a new pinv that can be used throughout this software.
-                % It is also clear that if you regularise eoungh the covariance matrix there is no need to a new pinv
+                lf    = U'*L{i};                
                 
                 % Robert's code
-                [u, s, v] = svd(real(pinv(lf' * invCy *lf)));
+                [u, ~] = svd(real(pinv_plus(lf' * invCy *lf, reduce_rank, 0)),'econ');
                 eta = u(:,1);
                 lf  = lf * eta;
-                          
+                
                 % construct the spatial filter
-                W{i} = pinv(lf' * invCy * lf) * lf' * invCy;
+                W{i} = lf'*invCy/(lf' * invCy * lf);
             else
                 W{i} = NaN;
             end
             
-             if ismember(i, Ibar)
+            if ismember(i, Ibar)
                 spm_progress_bar('Set', i); drawnow;
             end
         end
@@ -66,7 +60,10 @@ for m = 1:numel(modalities)
         
         spm_progress_bar('Clear');
         inverse.W.(modalities{m}) = W;
-    end
-end
+        
+    end; %% if modality exists
+end; % for modalities
+
+
 
 res = inverse;
