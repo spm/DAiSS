@@ -120,8 +120,9 @@ if isempty(trials)
     error('No trials matched the selection, check the specified condition labels');
 end
 
-
-channels = D.indchantype(S.modality, 'GOOD');
+channels = BF.features.(S.modality).chanind;
+U        = BF.features.(S.modality).U;
+nchan    = size(U, 2);
 
 YY       = {};
 nsamples = unique(cellfun(@length, samples));
@@ -137,19 +138,21 @@ spm_progress_bar('Init', ntrials , 'Computing covariance'); drawnow;
 if ntrials  > 100, Ibar = floor(linspace(1, ntrials ,100));
 else Ibar = 1:ntrials; end
 
-sumYY=zeros(length(channels));
+sumYY = 0;
+N     = 0;
 for i = 1:ntrials
     for j = 1:numel(samples)
-        Y  = squeeze(D(channels, samples{j}, alltrials(i)));
+        Y  = U'*squeeze(D(channels, samples{j}, alltrials(i)));
         Y  = detrend(Y', 'constant');
         YY{i, j} = Y'*Y;
-        sumYY=sumYY+YY{i,j};
+        sumYY = sumYY+YY{i,j};
+        N  = N+length(samples{j});
     end
     if ismember(i, Ibar)
         spm_progress_bar('Set', i); drawnow;
     end
 end
-sumYY=sumYY./(numel(samples)*ntrials);
+sumYY = sumYY./N;
 
 spm_progress_bar('Clear');
 
@@ -182,12 +185,12 @@ end
 spm('Pointer', 'Watch');drawnow;
 if S.scale
     
-    [sigma]=svd(sumYY);
+    sigma = svd(sumYY);
     
     disp('Using spm_pca_order to get scaling factor');
-    [M_opt,log_ev] = spm_pca_order (sumYY);
+    [M_opt,log_ev] = spm_pca_order(sumYY, N);
     
-    scale = eye(length(channels)).*sum(sigma(M_opt:end))./length(channels);         
+    scale = eye(nchan).*sum(sigma(M_opt:end))./nchan;         
 end
 
 for c = 1:size(Cy, 1)

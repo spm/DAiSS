@@ -60,10 +60,24 @@ for i = 1:numel(feature_funs)
     plugin.values{i} = feval(spm_file(feature_funs{i},'basename'));
 end
 
+
+%--------------------------------------------------------------------------
+% regularisation/reduction
+%--------------------------------------------------------------------------
+reg         = cfg_choice;
+reg.tag  = 'regularisation';
+reg.name = 'Regularisation method';
+
+reg_funs = spm_select('List', fileparts(mfilename('fullpath')), '^bf_regularise_.*\.m$');
+reg_funs = cellstr(reg_funs );
+for i = 1:numel(reg_funs)
+    reg.values{i} = feval(spm_file(reg_funs{i},'basename'));
+end
+
 out = cfg_exbranch;
 out.tag = 'features';
 out.name = 'Covariance features';
-out.val = {BF, whatconditions, woi, plugin};
+out.val = {BF, whatconditions, woi, plugin, reg};
 out.help = {'Define features for covariance computation'};
 out.prog = @bf_features_run;
 out.vout = @bf_features_vout;
@@ -80,10 +94,8 @@ BF = bf_load('BF.mat', {'data'});
 D  = BF.data.D;
 
 plugin_name = cell2mat(fieldnames(job.plugin));
-
 S         = job.plugin.(plugin_name);
 S.samples = {};
-
 
 for i = 1:size(job.woi, 1)
     S.samples{i} = D.indsample(1e-3*job.woi(i, 1)):D.indsample(1e-3*job.woi(i, 2));
@@ -101,6 +113,9 @@ else
     end
 end
 
+reg_name   = cell2mat(fieldnames(job.regularisation));
+S1         = job.regularisation.(reg_name);
+
 modalities = {'MEG', 'EEG'};
 
 for m = 1:numel(modalities)
@@ -112,8 +127,13 @@ for m = 1:numel(modalities)
         end
         S.channels=chanind;
         
-        BF.features.(modalities{m}) = feval(['bf_features_' plugin_name], BF, S);
+        BF.features.(modalities{m}) = feval(['bf_features_' plugin_name], BF, S);                
         
+        S1.modality = modalities{m};
+        
+        BF.features.(modalities{m}) = feval(['bf_regularise_' reg_name], BF, S1);
+        
+        BF.features.(modalities{m}).chanind = chanind;
     end
 end
 

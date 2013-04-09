@@ -48,8 +48,8 @@ end
 lambda=diag(lambda);
 
 % Order eigenvectors/values
-lambda=sort(lambda);
-lambda=flipud(lambda);
+lambda = sort(lambda);
+lambda = flipud(lambda);
 
 % Loop over possible number of sources
 for M=1:d-1,

@@ -161,7 +161,9 @@ if isempty(trials)
     error('No trials matched the selection, check the specified condition labels');
 end
 
-channels = D.indchannel(BF.sources.channels.(S.modality));
+channels = BF.features.(S.modality).chanind;
+U        = BF.features.(S.modality).U;
+nchan    = size(U, 1);
 
 Cf  = {};
 refindx = [];
@@ -213,7 +215,7 @@ else Ibar = 1:ntrials; end
 
 for i = 1:ntrials
     for j = 1:numel(samples)
-        Y  = squeeze(D(channels, samples{j}, alltrials(i)));
+        Y  = U'*squeeze(D(channels, samples{j}, alltrials(i)));
         
         [fourier, ntap] = ft_specest_mtmfft(Y, D.time(samples{j}), 'freqoi', centerfreq, ...
             'tapsmofrq', tapsmofrq, 'taper', S.taper, 'verbose', 0);

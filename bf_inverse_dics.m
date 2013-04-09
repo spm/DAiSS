@@ -36,6 +36,9 @@ for m = 1:numel(modalities)
         C    = BF.features.(modalities{m}).C;
         Cinv = BF.features.(modalities{m}).Cinv;
         
+        U    = BF.features.(modalities{m}).U;
+
+        
         L = BF.sources.L.(modalities{m});
         
         W = cell(size(L));
@@ -49,7 +52,7 @@ for m = 1:numel(modalities)
         
         for i = 1:nvert
             if ~isnan(L{i})
-                lf    = L{i};    
+                lf    = U'*L{i};    
                 
                 if size(lf, 2) == 1
                     S.fixedori = 'no';
