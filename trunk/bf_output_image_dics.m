@@ -104,13 +104,13 @@ if nargin == 0
         }';
     result.val = {'singleimage'};
     
-    projectnoise         = cfg_menu;
-    projectnoise.tag     = 'projectnoise';
-    projectnoise.name    = 'Project noise';
-    projectnoise.help    = {'Project IID noise through the filters instead of true covariance'};
-    projectnoise.labels  = {'yes', 'no'};
-    projectnoise.values  = {'yes', 'no'};
-    projectnoise.val = {'no'};
+    scale         = cfg_menu;
+    scale.tag     = 'scale';
+    scale.name    = 'Scale by filter norm';
+    scale.help    = {'Scale by IID noise projected through the filters.'};
+    scale.labels  = {'yes', 'no'};
+    scale.values  = {'yes', 'no'};
+    scale.val = {'no'};
     
     modality         = cfg_menu;
     modality.tag     = 'modality';
@@ -129,7 +129,7 @@ if nargin == 0
     image_dics      = cfg_branch;
     image_dics.tag  = 'image_dics';
     image_dics.name = 'DICS image';
-    image_dics.val  = {reference, whatconditions, woi,  contrast, foi, taper, result, projectnoise, modality};
+    image_dics.val  = {reference, whatconditions, woi,  contrast, foi, taper, result, scale, modality};
     
     res = image_dics;
     
@@ -304,26 +304,26 @@ for c = 1:size(mCf, 1)
             for j = 1:numel(mCf(c, :))
                 if ~isempty(refindx)
                     estimate = ft_inverse_beamformer_dics(w, mCf{c, j}, 'Cr', mCr{c, j}, 'Pr', Pr(c, j), ...
-                        'filterinput', 'yes',  'projectnoise', S.projectnoise, ...
+                        'filterinput', 'yes',  'projectnoise', S.scale, ...
                         'keepfilter', 'no', 'keepleadfield', 'no', 'keepcsd', 'no', 'feedback', 'none');
                     
                     cpow(j) = estimate.coh;
                 elseif ~isempty(Wr)
                     estimate = ft_inverse_beamformer_dics(w, mCf{c, j}, 'refdip', Wr, ...
-                        'filterinput', 'yes',  'projectnoise', S.projectnoise, ...
+                        'filterinput', 'yes',  'projectnoise', S.scale, ...
                         'keepfilter', 'no', 'keepleadfield', 'no', 'keepcsd', 'no', 'feedback', 'none');
                     
                     cpow(j) = estimate.coh;
                 else
                     estimate = ft_inverse_beamformer_dics(w, mCf{c, j},...
-                        'filterinput', 'yes',  'projectnoise', S.projectnoise, ...
+                        'filterinput', 'yes',  'projectnoise', S.scale, ...
                         'keepfilter', 'no', 'keepleadfield', 'no', 'keepcsd', 'no', 'feedback', 'none');
                     
                     cpow(j) = estimate.pow;
                 end
                 
-                if isequal(S.projectnoise, 'yes')
-                    cpow(j) = estimate.noise;
+                if isequal(S.scale, 'yes')
+                    cpow(j) = cpow(j)./estimate.noise;
                 end
                 
                 pow(i) = cpow*S.contrast';

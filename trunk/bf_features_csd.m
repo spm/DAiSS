@@ -31,10 +31,17 @@ if nargin == 0
     keepreal.values = {1, 0};
     keepreal.help = {'Keep only the real part of the CSD'};
     
+    han = cfg_menu;
+    han.tag = 'hanning';
+    han.name = 'Pre-multiply with Hanning';
+    han.labels = {'yes', 'no'};
+    han.values = {1, 0};
+    han.val = {1};
+    
     csd      = cfg_branch;
     csd.tag  = 'csd';
     csd.name = 'Cross-spectral density';
-    csd.val  = {foi, taper, keepreal};
+    csd.val  = {foi, taper, keepreal, han};
     
     res = csd;
     
@@ -48,25 +55,36 @@ D = BF.data.D;
 ntrials    = length(S.trials);
 centerfreq = mean(S.foi);
 tapsmofrq  = 0.5*(abs(diff(S.foi)));
+nwoi       = numel(S.samples);
 
 Cf = 0;
-
+N = 1;
 spm('Pointer', 'Watch');drawnow;
 spm_progress_bar('Init', ntrials, 'Computing CSD'); drawnow;
 if ntrials > 100, Ibar = floor(linspace(1, ntrials,100));
 else Ibar = 1:ntrials; end
 
 for i = 1:ntrials
-    for j = 1:numel(S.samples)
+    for j = 1:nwoi
         Y  = squeeze(D(S.channels, S.samples{j}, S.trials(i)));   
-
+        
+        if j == 1
+            if S.hanning
+                han = repmat(spm_hanning(size(Y, 2))', [size(Y, 1), 1, size(Y, 3)]);
+            else
+                han = 1;
+            end
+        end
+        
+        Y = Y.*han;
         
         [fourier, ntap] = ft_specest_mtmfft(Y, D.time(S.samples{j}), 'freqoi', centerfreq, ...
             'tapsmofrq', tapsmofrq, 'taper', S.taper, 'verbose', 0);
         
         
         dat  = transpose(fourier);
-        Cf = Cf + (dat * ctranspose(dat)) ./ ntap;
+        Cf = Cf + (dat * ctranspose(dat))./ntap;
+        N  = N + ntap;
     end
     if ismember(i, Ibar)
         spm_progress_bar('Set', i); drawnow;
@@ -75,7 +93,7 @@ end
 
 spm_progress_bar('Clear');
 
-Cf = Cf/ntrials;
+Cf = Cf/(ntrials*nwoi);
 
 if S.keepreal
     % the filter is computed using only the leadfield and the inverse covariance or CSD matrix
@@ -86,6 +104,6 @@ end
 features=[];
 
 features.C    = Cf;
-features.N    = ntap*ntrials;
+features.N    = N;
 
 res = features;
