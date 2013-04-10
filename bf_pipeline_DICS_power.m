@@ -1,5 +1,5 @@
 %-----------------------------------------------------------------------
-% Job saved on 10-Apr-2013 11:23:50 by cfg_util (rev $Rev$)
+% Job saved on 10-Apr-2013 11:32:30 by cfg_util (rev $Rev$)
 % spm SPM - SPM12b (beta)
 % cfg_basicio BasicIO - Unknown
 %-----------------------------------------------------------------------
@@ -36,14 +36,14 @@ matlabbatch{4}.spm.tools.beamforming.features.regularisation.minkatrunc.reduce =
 matlabbatch{5}.spm.tools.beamforming.inverse.BF(1) = cfg_dep('Covariance features: BF.mat file', substruct('.','val', '{}',{4}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','BF'));
 matlabbatch{5}.spm.tools.beamforming.inverse.plugin.dics.fixedori = 'yes';
 matlabbatch{6}.spm.tools.beamforming.output.BF(1) = cfg_dep('Inverse solution: BF.mat file', substruct('.','val', '{}',{5}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','BF'));
-matlabbatch{6}.spm.tools.beamforming.output.plugin.image_dics.reference.refchan = '<UNDEFINED>';
+matlabbatch{6}.spm.tools.beamforming.output.plugin.image_dics.reference.power = 1;
 matlabbatch{6}.spm.tools.beamforming.output.plugin.image_dics.whatconditions.all = 1;
 matlabbatch{6}.spm.tools.beamforming.output.plugin.image_dics.woi = [-Inf Inf];
 matlabbatch{6}.spm.tools.beamforming.output.plugin.image_dics.contrast = 1;
 matlabbatch{6}.spm.tools.beamforming.output.plugin.image_dics.foi = '<UNDEFINED>';
 matlabbatch{6}.spm.tools.beamforming.output.plugin.image_dics.taper = 'dpss';
 matlabbatch{6}.spm.tools.beamforming.output.plugin.image_dics.result = 'singleimage';
-matlabbatch{6}.spm.tools.beamforming.output.plugin.image_dics.scale = 'no';
+matlabbatch{6}.spm.tools.beamforming.output.plugin.image_dics.scale = 'yes';
 matlabbatch{6}.spm.tools.beamforming.output.plugin.image_dics.modality = 'MEG';
 matlabbatch{7}.spm.tools.beamforming.write.BF(1) = cfg_dep('Output: BF.mat file', substruct('.','val', '{}',{6}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','BF'));
 matlabbatch{7}.spm.tools.beamforming.write.plugin.nifti.normalise = 'separate';
