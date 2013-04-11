@@ -40,13 +40,26 @@ if nargin == 0
     woi.val = {[-Inf Inf]};
     woi.help = {'Time windows (in ms)'};
     
-    refchan = cfg_entry;
-    refchan.tag = 'refchan';
-    refchan.name = 'Reference channel';
-    refchan.strtype = 's';
-    refchan.num = [1 Inf];
-    refchan.help = {'Reference channel name.'};
+    name = cfg_entry;
+    name.tag = 'name';
+    name.name = 'Channel name';
+    name.strtype = 's';
+    name.num = [1 Inf];
+    name.help = {'Reference channel name.'};
     
+    shuffle         = cfg_menu;
+    shuffle.tag     = 'shuffle';
+    shuffle.name    = 'Shuffle';
+    shuffle.help    = {'Shuffle the reference channel to produce the null case.'};
+    shuffle.labels  = {'yes', 'no'};
+    shuffle.values  = {1, 0};
+    shuffle.val = {0};
+    
+    refchan      = cfg_branch;
+    refchan.tag  = 'refchan';
+    refchan.name = 'Reference channel';
+    refchan.val  = {name, shuffle};
+        
     refdip = cfg_entry;
     refdip.tag = 'refdip';
     refdip.name = 'Reference source';
@@ -161,6 +174,9 @@ if isempty(trials)
     error('No trials matched the selection, check the specified condition labels');
 end
 
+alltrials = spm_vec(trials);
+ntrials   = length(alltrials);
+
 channels = BF.features.(S.modality).chanind;
 U        = BF.features.(S.modality).U;
 nchan    = size(U, 1);
@@ -169,12 +185,18 @@ Cf  = {};
 refindx = [];
 Wr = [];
 if isfield(S.reference, 'refchan')
-    refindx = D.indchannel(S.reference.refchan);
+    refindx = D.indchannel(S.reference.refchan.name);
     
     Cr = {};
     Pr = [];
     
-    prefix = 'dics_refcoh';
+    if S.reference.refchan.shuffle
+        shuffle = randperm(ntrials);
+        prefix = 'dics_refcoh_shuffled';
+    else
+        shuffle = 1:ntrials;
+        prefix = 'dics_refcoh';
+    end
 elseif isfield(S.reference, 'refdip')
     % transform coords in MNI space into space where we are doing the beamforming
     seed = spm_eeg_inv_transform_points(inv(BF.data.transforms.toMNI), S.reference.refdip);
@@ -202,9 +224,6 @@ if length(nsamples) > 1
     error('All time windows should be equal lentgh')
 end
 
-alltrials = spm_vec(trials);
-ntrials   = length(alltrials);
-
 centerfreq = mean(S.foi);
 tapsmofrq  = 0.5*(abs(diff(S.foi)));
 
@@ -225,7 +244,7 @@ for i = 1:ntrials
         Cf{i, j} = (dat * ctranspose(dat)) ./ ntap;
         
         if ~isempty(refindx)
-            Y  = squeeze(D(refindx, samples{j}, alltrials(i)));
+            Y  = squeeze(D(refindx, samples{j}, alltrials(shuffle(i))));
             
             [fourier, ntap] = ft_specest_mtmfft(Y, D.time(samples{j}), 'freqoi', centerfreq, ...
                 'tapsmofrq', tapsmofrq, 'taper', S.taper, 'verbose', 0);
