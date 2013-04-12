@@ -29,6 +29,17 @@ val.strtype = 'n';
 val.help = {'Index of the cell in D.inv where the forward model is stored.'};
 val.val = {1};
 
+gradsource = cfg_menu;
+gradsource.tag = 'gradsource';
+gradsource.name = 'Where to get MEG sensors';
+gradsource.help = {'Taking sensors from D.sensors makes it possible to',...
+    'use the same head model and coregistration with multiple datasets.',...
+    'This relies on the assumption that the sensors are in head coordinates',...
+    'and the fiducals are at the same locations'};
+gradsource.labels = {'D.inv', 'D.sensors'};
+gradsource.values = {'inv', 'sensors'};
+gradsource.val = {'inv'};
+
 space = cfg_menu;
 space.tag = 'space';
 space.name = 'Coordinate system to work in';
@@ -48,7 +59,7 @@ overwrite.val = {0};
 out = cfg_exbranch;
 out.tag = 'data';
 out.name = 'Prepare data';
-out.val = {dir, D, val, space, overwrite};
+out.val = {dir, D, val, gradsource, space, overwrite};
 out.help = {'Prepare the input for beamforming'};
 out.prog = @bf_data_run;
 out.vout = @bf_data_vout;
@@ -57,9 +68,10 @@ end
 
 function  out = bf_data_run(job)
 
-outdir = job.dir{1};
-val    = job.val;
-space  = job.space;
+outdir     = job.dir{1};
+val        = job.val;
+space      = job.space;
+gradsource = job.gradsource;
 D      = spm_eeg_load(job.D{1});
 
 if ~isfield(D, 'inv')
@@ -104,7 +116,12 @@ if megind > 0
     
     vol      = D.inv{val}.forward(megind).vol;
     datareg  = D.inv{val}.datareg(megind);
-    sens     = datareg.sensors;
+    
+    if isequal(gradsource, 'inv')
+        sens     = datareg.sensors;
+    else
+        sens     = D.sensors('MEG');
+    end
 
     M = datareg.toMNI;
     [U, L, V]  = svd(M(1:3, 1:3));
