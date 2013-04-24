@@ -14,6 +14,14 @@ BF.filter = '^BF.mat$';
 BF.num = [1 1];
 BF.help = {'Select BF.mat file.'};
 
+reduce_rank = cfg_entry;
+reduce_rank.tag = 'reduce_rank';
+reduce_rank.name = 'Reduce rank';
+reduce_rank.strtype = 'r';
+reduce_rank.num = [1 2];
+reduce_rank.val = {[2 3]};
+reduce_rank.help = {'Enter rank for MEG and EEG lead fields [MEG EEG]'};
+
 %--------------------------------------------------------------------------
 % method
 %--------------------------------------------------------------------------
@@ -31,7 +39,7 @@ end
 out = cfg_exbranch;
 out.tag = 'sources';
 out.name = 'Define sources';
-out.val = {BF, plugin};
+out.val = {BF, reduce_rank, plugin};
 out.help = {'Define source space for beamforming'};
 out.prog = @bf_source_run;
 out.vout = @bf_source_vout;
@@ -48,7 +56,6 @@ BF = bf_load('BF.mat');
 
 plugin_name = cell2mat(fieldnames(job.plugin));
 
-BF.sources = [];
 BF.sources.(plugin_name) = feval(['bf_sources_' plugin_name], BF, job.plugin.(plugin_name));
 BF.sources.pos = BF.sources.(plugin_name).pos;
 if isfield(BF.sources.(plugin_name), 'ori')
@@ -59,7 +66,7 @@ end
 
 nvert = size(BF.sources.pos, 1);
 modalities = {'MEG', 'EEG'};
-reduce_rank=[2 3]; %MWW
+reduce_rank=job.reduce_rank; 
 
 for m = 1:numel(modalities)
     
@@ -69,6 +76,12 @@ for m = 1:numel(modalities)
         if isempty(chanind)
             error(['No good ' modalities{m} ' channels were found.']);
         end
+        
+        if isstr(BF.data.(modalities{m}).vol),
+            tmp=load(BF.data.(modalities{m}).vol);
+            BF.data.(modalities{m}).vol=tmp.vol;
+        end;
+        
         [vol, sens] = ft_prepare_vol_sens(BF.data.(modalities{m}).vol, BF.data.(modalities{m}).sens, 'channel', ...
             chanlabels(BF.data.D, chanind));
         
