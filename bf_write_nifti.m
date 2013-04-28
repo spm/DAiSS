@@ -76,7 +76,7 @@ if isfield(BF.sources, 'grid') || isfield(BF.sources, 'voi')
     if isfield(BF.sources, 'grid')
         sourcespace    = 'grid';
         source         = BF.sources.grid;
-        source.pos     = BF.sources.pos;
+        source.pos     = BF.sources.grid.allpos;
     else
         sourcespace    = 'voi';
         source         = [];
@@ -143,6 +143,9 @@ for i = 1:nimages
     
     switch sourcespace
         case 'grid'
+            pow = source.pow;
+            source.pow = nan(size(source.pos, 1), 1);
+            source.pow(source.inside) = pow;
             sourceint = ft_sourceinterpolate(cfg, source, ft_read_mri(sMRI, 'format', 'nifti_spm'));
             Y = sourceint.pow;
         case 'mesh'
