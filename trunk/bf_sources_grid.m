@@ -66,6 +66,14 @@ grid.zgrid = mn(3):S.resolution:mx(3);
 grid.dim   = [length(grid.xgrid) length(grid.ygrid) length(grid.zgrid)];
 [X, Y, Z]  = ndgrid(grid.xgrid, grid.ygrid, grid.zgrid);
 
-grid.pos   = [X(:) Y(:) Z(:)];
+pos   = [X(:) Y(:) Z(:)];
+
+inside = ft_inside_vol(pos, struct('bnd', iskull));
+
+grid.allpos  = pos;
+grid.inside  = find(inside);
+grid.outside = find(~inside);
+
+grid.pos     = pos(inside, :);
 
 res = ft_transform_geometry(M2, grid);
