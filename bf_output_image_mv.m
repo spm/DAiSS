@@ -58,7 +58,7 @@ if nargin == 0
     woi.strtype = 'r';
     woi.num = [Inf 2];
     woi.val = {[-Inf Inf]};
-    woi.help = {'Time windows'};
+    woi.help = {'Time windows (in ms)'};
     
     foi = cfg_entry;
     foi.tag = 'foi';
@@ -66,7 +66,7 @@ if nargin == 0
     foi.strtype = 'r';
     foi.num = [Inf 2];
     foi.val = {[-Inf Inf]};
-    foi.help = {'Freq bands'};
+    foi.help = {'Freq bands (in Hz)'};
     
     
     datafeatures = cfg_menu;
@@ -80,7 +80,7 @@ if nargin == 0
     
     contrast = cfg_entry;
     contrast.tag = 'contrast';
-    contrast.name = 'Time contrast';
+    contrast.name = 'contrast';
     contrast.strtype = 'i';
     contrast.num = [1 Inf];
     contrast.val = {1};
@@ -148,7 +148,7 @@ if isfield(S.isdesign,'custom'),
     %% gui specified conditions and contrast
     
     samples = {};
-    woi=S.isdesign.custom.woi;
+    woi=S.isdesign.custom.woi./1000;
     
     duration=unique(woi(:,2)-woi(:,1));
     if numel(duration)>1,
@@ -174,6 +174,19 @@ if isfield(S.isdesign,'custom'),
             error('No trials matched the selection, check the specified condition labels');
         end
     end
+    
+      
+    %%check for number of trials //// added by ANNA 30/04/2013
+    for i=1:numel(trials)
+        num_trials(i) = length(trials{i});
+    end
+    
+    if min(num_trials)~= max(num_trials)
+        warning ('Number of trials are not the same accross conditions- throwing away');
+        num_trials
+    end
+    nt = min(num_trials); % ANNA -throw away the extra trials
+    
     col=0;
     X=[];
     Xtrials=[];
@@ -182,17 +195,38 @@ if isfield(S.isdesign,'custom'),
     for j=1:size(woi, 1),
         for i=1:numel(trials)
             col=col+1;
-            nt=numel(trials{i});
+            %nt=numel(trials{i}); % ANNA look above for the warning
             Xtmp=[zeros(size(X,1),1); ones(nt,1)];
             if col>1,
-                X=[X;zeros(nt,1)];
+                X=[X;zeros(nt,size(X,2))]; %1)]; ANNA
             end;
             X=[X Xtmp];
-            Xtrials=[Xtrials ;[trials{i}]];
-            Xstartlatencies=[Xstartlatencies; ones(nt,1).*woi(j,1)];
+            tlist = spm_vec(trials{i}); % ANNA list of trials 
+            Xtrials=[Xtrials ; tlist(1:nt)]; % ANNA list of trials - this must be a vector
+            Xstartlatencies=[Xstartlatencies; ones(nt,1).*woi(j,1)];%% again this has to be a vector
             xlabel=strvcat(xlabel,[clabel{i} ',' num2str(woi(j,1))]);
         end;
     end;
+%     % ORIG
+%     col=0;
+%     X=[];
+%     Xtrials=[];
+%     Xstartlatencies=[];
+%     xlabel=[];
+%     for j=1:size(woi, 1),
+%         for i=1:numel(trials)
+%             col=col+1;
+%             nt=numel(trials{i});
+%             Xtmp=[zeros(size(X,1),1); ones(nt,1)];
+%             if col>1,
+%                 X=[X;zeros(nt,1)];
+%             end;
+%             X=[X Xtmp];
+%             Xtrials=[Xtrials ;[trials{i}]];
+%             Xstartlatencies=[Xstartlatencies; ones(nt,1).*woi(j,1)];
+%             xlabel=strvcat(xlabel,[clabel{i} ',' num2str(woi(j,1))]);
+%         end;
+%     end;
     
     allsamples=[D.indsample(Xstartlatencies); D.indsample(Xstartlatencies+ones(size(Xstartlatencies)).*duration)]';
     contrast=S.isdesign.custom.contrast';
