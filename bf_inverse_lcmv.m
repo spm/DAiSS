@@ -10,7 +10,7 @@ if nargin == 0
     lcmv      = cfg_const;
     lcmv.tag  = 'lcmv';
     lcmv.name = 'LCMV';
-    lcmv.val  = {};    
+    lcmv.val  = {0};    
     res = lcmv;
     
     return
