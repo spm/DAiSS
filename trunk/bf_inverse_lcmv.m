@@ -42,7 +42,7 @@ for m = 1:numel(modalities)
                 lf    = U'*L{i};                
                 
                 % Robert's code
-                [u, ~] = svd(real(pinv_plus(lf' * invCy *lf, reduce_rank, 0)),'econ');
+                [u, dum] = svd(real(pinv_plus(lf' * invCy *lf, reduce_rank, 0)),'econ');
                 eta = u(:,1);
                 lf  = lf * eta;
                 
