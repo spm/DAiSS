@@ -21,7 +21,7 @@ if nargin == 0
         'separate'
         'all'
         }';
-    normalise.val = {'separate'};
+    normalise.val = {'no'};
     
     space         = cfg_menu;
     space.tag     = 'space';
