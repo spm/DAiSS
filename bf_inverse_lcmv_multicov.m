@@ -82,7 +82,7 @@ for m = 1:numel(modalities)
                       
                       case 'scalar'
                         tmp=lf' * invCy *lf;
-                        [u, ~] = svd(real(pinv_plus(tmp,reduce_rank,0)),'econ'); % this is faster,  - MWW
+                        [u, dum] = svd(real(pinv_plus(tmp,reduce_rank,0)),'econ'); % this is faster,  - MWW
                         
                         eta = u(:,1);
                         lf  = lf * eta;
