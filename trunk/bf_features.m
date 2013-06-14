@@ -41,11 +41,11 @@ whatconditions.val = {all};
 
 woi = cfg_entry;
 woi.tag = 'woi';
-woi.name = 'Time window(s) of interest';
+woi.name = 'Time windows of interest';
 woi.strtype = 'r';
 woi.num = [Inf 2];
 woi.val = {[-Inf Inf]};
-woi.help = {'Time window(s) to average over (ms)'};
+woi.help = {'Time windows to average over (ms)'};
 
 %--------------------------------------------------------------------------
 % method
