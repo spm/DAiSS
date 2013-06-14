@@ -76,7 +76,7 @@ if nargin == 0
     datafeatures.values =get_data_features;
     
     datafeatures.help = {'Data features of interest'};
-    datafeatures.val =datafeatures.values(1);
+    datafeatures.val =datafeatures.values(end);
     
     contrast = cfg_entry;
     contrast.tag = 'contrast';
