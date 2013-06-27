@@ -21,13 +21,20 @@ if nargin == 0
     fdownsample.num = [1 1];
     fdownsample.val = {1};
     fdownsample.help = {'A number that determines mesh downsampling',...
-        'e.g 5 for taking every 5th vertex'};
+        'e.g 5 for taking every 5th vertex'};    
     
+    flip         = cfg_menu;
+    flip.tag     = 'flip';
+    flip.name    = 'Flip';
+    flip.help    = {'Flip the mesh relative to midsagittal plane.'};
+    flip.labels  = {'yes', 'no'};
+    flip.values  = {true, false};
+    flip.val = {false};
     
     mesh = cfg_branch;
     mesh.tag = 'mesh';
     mesh.name = 'Cortical mesh';
-    mesh.val = {orient, fdownsample};
+    mesh.val = {orient, fdownsample, flip};
     
     
     return
@@ -60,6 +67,13 @@ original = export(gifti(original), 'spm');
 original.vert = spm_eeg_inv_transform_points(inv(M), original.vert);
 
 mesh.pos = mesh.individual.vert;
+
+if S.flip
+    M1 = eye(4);
+    M1(1, 1) = -1;
+    M1 = BF.data.transforms.toMNI_aligned\M1*BF.data.transforms.toMNI_aligned;
+    mesh.pos = spm_eeg_inv_transform_points(M1, mesh.individual.vert);
+end
 
 switch S.orient
     case 'original'
