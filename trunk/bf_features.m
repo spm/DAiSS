@@ -74,10 +74,17 @@ for i = 1:numel(reg_funs)
     reg.values{i} = feval(spm_file(reg_funs{i},'basename'));
 end
 
+bootstrap = cfg_menu;
+bootstrap.tag = 'bootstrap';
+bootstrap.name = 'Bootstrap';
+bootstrap.labels = {'yes', 'no'};
+bootstrap.values = {true, false};
+bootstrap.val = {false};
+
 out = cfg_exbranch;
 out.tag = 'features';
 out.name = 'Covariance features';
-out.val = {BF, whatconditions, woi, plugin, reg};
+out.val = {BF, whatconditions, woi, plugin, reg, bootstrap};
 out.help = {'Define features for covariance computation'};
 out.prog = @bf_features_run;
 out.vout = @bf_features_vout;
@@ -114,6 +121,10 @@ else
     end
 end
 
+if job.bootstrap
+    S.trials = S.trials(ceil(rand(1, length(S.trials)).*length(S.trials)));
+end
+
 reg_name   = cell2mat(fieldnames(job.regularisation));
 S1         = job.regularisation.(reg_name);
 
@@ -137,6 +148,8 @@ for m = 1:numel(modalities)
         BF.features.(modalities{m}).chanind = chanind;
     end
 end
+
+BF.features.trials = S.trials;
 
 bf_save(BF);
 

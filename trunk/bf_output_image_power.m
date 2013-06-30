@@ -32,6 +32,15 @@ if nargin == 0
     whatconditions.values = {all, conditions};
     whatconditions.val = {all};
     
+    sametrials = cfg_menu;
+    sametrials.tag = 'sametrials';
+    sametrials.name = 'Trials same as for filters';
+    sametrials.labels = {'yes', 'no'};
+    sametrials.values = {true, false};
+    sametrials.val = {false};
+    sametrials.help = {'Take the same trials as used for filter computation',...
+        'This is useful for bootstrap.'};
+    
     woi = cfg_entry;
     woi.tag = 'woi';
     woi.name = 'Time windows of interest';
@@ -88,7 +97,7 @@ if nargin == 0
     image_power      = cfg_branch;
     image_power.tag  = 'image_power';
     image_power.name = 'Power image';
-    image_power.val  = {whatconditions, woi, contrast, result, scale, modality};
+    image_power.val  = {whatconditions, sametrials, woi, contrast, result, scale, modality};
     
     res = image_power;
     
@@ -111,11 +120,19 @@ if isfield(S.whatconditions, 'all')
 end
 
 for i = 1:numel(S.whatconditions.condlabel)
-    if isempty(D.indtrial(S.whatconditions.condlabel{i}, 'GOOD'))
+    if S.sametrials
+        trials{i} = BF.features.trials(strmatch(S.whatconditions.condlabel{i},...
+            D.conditions(BF.features.trials)));
+    else
+        trials{i} = D.indtrial(S.whatconditions.condlabel{i}, 'GOOD');
+    end
+    
+    if isempty(trials{i})
         error('No trials matched the selection.');
     end
-    trials{i} = D.indtrial(S.whatconditions.condlabel{i}, 'GOOD');
+    
 end
+
 if isempty(trials)
     error('No trials matched the selection, check the specified condition labels');
 end

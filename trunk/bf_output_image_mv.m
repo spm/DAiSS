@@ -13,7 +13,7 @@ if nargin == 0
     all = cfg_const;
     all.tag = 'all';
     all.name = 'All';
-    all.val  = {1};
+    all.val  = {1};        
     
     condlabel = cfg_entry;
     condlabel.tag = 'condlabel';
@@ -33,9 +33,7 @@ if nargin == 0
     whatconditions.tag = 'whatconditions';
     whatconditions.name = 'What conditions to include?';
     whatconditions.values = {all, conditions};
-    whatconditions.val = {all};
-    
-    
+    whatconditions.val = {all};    
     
     %     design = cfg_const;
     %     design.tag = 'design';
@@ -124,11 +122,19 @@ if nargin == 0
     isdesign.values = {design, custom};
     isdesign.val = {design};
     
+    sametrials = cfg_menu;
+    sametrials.tag = 'sametrials';
+    sametrials.name = 'Trials same as for filters';
+    sametrials.labels = {'yes', 'no'};
+    sametrials.values = {true, false};
+    sametrials.val = {false};
+    sametrials.help = {'Take the same trials as used for filter computation',...
+        'This is useful for bootstrap.'};
     
     image_mv      = cfg_branch;
     image_mv.tag  = 'image_mv';
     image_mv.name = 'Mv image';
-    image_mv.val  = { isdesign, datafeatures, foi,  result, modality};
+    image_mv.val  = { isdesign, datafeatures, foi,  result, sametrials, modality};
     
     res = image_mv;
     
@@ -159,7 +165,11 @@ if isfield(S.isdesign,'custom'),
     whatconditions=S.isdesign.custom.whatconditions;
     
     if isfield(whatconditions, 'all')
-        trials{1} = 1:D.ntrials;
+        if S.sametrials
+            trials{1} = BF.features.trials;
+        else
+            trials{1} = 1:D.ntrials;
+        end
         clabel{1}='all';
     else
         for i = 1:numel(whatconditions.condlabel)
@@ -167,8 +177,15 @@ if isfield(S.isdesign,'custom'),
                 error('No trials matched the selection.');
             end
             
-            trials{i} = D.indtrial(whatconditions.condlabel{i}, 'GOOD');
             clabel{i}=whatconditions.condlabel{i};
+            
+            if S.sametrials
+                trials{i} = BF.features.trials(strmatch(clabel{i}, D.conditions(BF.features.trials)));
+            else
+                trials{i} = D.indtrial(whatconditions.condlabel{i}, 'GOOD');
+            end
+                        
+            
         end
         if isempty(trials)
             error('No trials matched the selection, check the specified condition labels');
