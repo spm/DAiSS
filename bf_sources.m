@@ -56,8 +56,10 @@ BF = bf_load('BF.mat');
 
 plugin_name = cell2mat(fieldnames(job.plugin));
 
+BF.sources = [];
 BF.sources.(plugin_name) = feval(['bf_sources_' plugin_name], BF, job.plugin.(plugin_name));
 BF.sources.pos = BF.sources.(plugin_name).pos;
+
 if isfield(BF.sources.(plugin_name), 'ori')
     BF.sources.ori = BF.sources.(plugin_name).ori;
 else
@@ -72,12 +74,17 @@ for m = 1:numel(modalities)
     
     if isfield(BF.data, modalities{m})
         
-        chanind = indchantype(BF.data.D, modalities{m}, 'GOOD');
+        if isequal(modalities{m}, 'MEG')
+            chanind = indchantype(BF.data.D, 'MEGANY', 'GOOD');
+        elseif isequal(modalities{m}, 'EEG')
+            chanind = indchantype(BF.data.D, 'EEG', 'GOOD');
+        end
+        
         if isempty(chanind)
             error(['No good ' modalities{m} ' channels were found.']);
         end
         
-        if isstr(BF.data.(modalities{m}).vol),
+        if ischar(BF.data.(modalities{m}).vol),
             tmp=load(BF.data.(modalities{m}).vol);
             BF.data.(modalities{m}).vol=tmp.vol;
         end;

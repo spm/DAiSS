@@ -86,10 +86,12 @@ if nargin == 0
     modality.help    = {'Specify modality'};
     modality.labels  = {
         'MEG'
+        'MEGPLANAR'
         'EEG'
         }';
     modality.values  = {
         'MEG'
+        'MEGPLANAR'
         'EEG'
         }';
     modality.val = {'MEG'};
@@ -173,7 +175,7 @@ sumYY = sumYY./N;
 
 spm_progress_bar('Clear');
 
-W = BF.inverse.W.(S.modality);
+W = BF.inverse.(S.modality).W;
 nvert = numel(W);
 
 Cy = {};

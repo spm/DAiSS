@@ -32,20 +32,20 @@ elseif nargin < 2
     error('Two input arguments are required');
 end
 
-modalities = fieldnames(BF.sources.L);
+modalities = intersect(fieldnames(BF.features), {'EEG', 'MEG', 'MEGPLANAR'});
 
 for m  = 1:numel(modalities)    
     U        = BF.features.(modalities{m}).U; 
         
     montage          = [];
-    montage.labelorg = BF.sources.channels.(modalities{m});
+    montage.labelorg = BF.inverse.(modalities{m}).channels;
     montage.labelorg = montage.labelorg(:);
     montage.tra      = [];
     if isfield(BF.sources, 'voi')
         montage.labelnew = BF.sources.voi.label;
         for v = 1:numel(montage.labelnew)
             ind = find(BF.sources.voi.pos2voi == v);
-            W   = cat(1, BF.inverse.W.(modalities{m}){ind});
+            W   = cat(1, BF.inverse.(modalities{m}).W{ind});
             
             switch S.method
                 case 'max'
@@ -65,7 +65,7 @@ for m  = 1:numel(modalities)
     else
         mnipos = spm_eeg_inv_transform_points(BF.data.transforms.toMNI, BF.sources.pos);
         for i = 1:size(mnipos, 1)
-            w = BF.inverse.W.(modalities{m}){i};
+            w = BF.inverse.(modalities{m}).W{i};
             if ~isnan(w)
                 montage.labelnew{i} = sprintf('%d_%d_%d', round(mnipos(i, :)));
                 montage.tra = [montage.tra; w*U'];

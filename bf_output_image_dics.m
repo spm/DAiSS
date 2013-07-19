@@ -140,10 +140,12 @@ if nargin == 0
     modality.help    = {'Specify modality'};
     modality.labels  = {
         'MEG'
+        'MEGPLANAR'
         'EEG'
         }';
     modality.values  = {
         'MEG'
+        'MEGPLANAR'
         'EEG'
         }';
     modality.val = {'MEG'};
@@ -204,6 +206,10 @@ Wr = [];
 if isfield(S.reference, 'refchan')
     refindx = D.indchannel(S.reference.refchan.name);
     
+    if isempty(refindx)
+        error('The specified reference channel was not found in the data.');
+    end
+    
     Cr = {};
     Pr = [];
     
@@ -228,7 +234,7 @@ elseif isfield(S.reference, 'refdip')
         warning(['Closest match is ' mdist ' mm away from the specified location.']);
     end
     
-    Wr =  BF.inverse.W.(S.modality){ind};
+    Wr =  BF.inverse(S.modality).W{ind};
     
     prefix = 'dics_dipcoh';
 else
@@ -278,7 +284,7 @@ end
 
 spm_progress_bar('Clear');
 
-W = BF.inverse.W.(S.modality);
+W = BF.inverse.(S.modality).W;
 nvert = numel(W);
 
 mCf = {};
