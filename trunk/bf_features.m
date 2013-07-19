@@ -47,6 +47,31 @@ woi.num = [Inf 2];
 woi.val = {[-Inf Inf]};
 woi.help = {'Time windows to average over (ms)'};
 
+modality = cfg_menu;
+modality.tag = 'modality';
+modality.name = 'Select modalities';
+modality.help = {'Select modalities for the inversion (only relevant for multimodal datasets).'};
+modality.labels = {'All', 'EEG', 'MEG', 'MEGPLANAR', 'EEG+MEG', 'MEG+MEGPLANAR', 'EEG+MEGPLANAR'};
+modality.values = {
+    {'EEG', 'MEG', 'MEGPLANAR'}
+    {'EEG'}
+    {'MEG'}
+    {'MEGPLANAR'}
+    {'EEG', 'MEG'}
+    {'MEG', 'MEGPLANAR'}
+    {'EEG', 'MEGPLANAR'}
+    }';
+modality.val = {{'MEG'}};
+
+
+fuse = cfg_menu;
+fuse.tag = 'fuse';
+fuse.name = 'Fuse modalities';
+fuse.help = {'Fuse sensors for different modalities together (requires prior rescaling).'};
+fuse.labels = {'Don''t fuse' 'Fuse MEG only', 'Fuse all'};
+fuse.values = {'no', 'meg', 'all'};
+fuse.val = {'no'};
+
 %--------------------------------------------------------------------------
 % method
 %--------------------------------------------------------------------------
@@ -84,7 +109,7 @@ bootstrap.val = {false};
 out = cfg_exbranch;
 out.tag = 'features';
 out.name = 'Covariance features';
-out.val = {BF, whatconditions, woi, plugin, reg, bootstrap};
+out.val = {BF, whatconditions, woi, modality, fuse, plugin, reg, bootstrap};
 out.help = {'Define features for covariance computation'};
 out.prog = @bf_features_run;
 out.vout = @bf_features_vout;
@@ -128,25 +153,38 @@ end
 reg_name   = cell2mat(fieldnames(job.regularisation));
 S1         = job.regularisation.(reg_name);
 
-modalities = {'MEG', 'EEG'};
+switch job.fuse
+    case 'no'
+        modalities = job.modality;
+    case 'meg'
+        modalities{1} = intersect(job.modality, {'MEG', 'MEGPLANAR'});
+        modalities    = [modalities intersect(job.modality, {'EEG'})];
+    case 'all'
+        modalities{1} = job.modality;
+end
 
 for m = 1:numel(modalities)
-    
-    if isfield(BF.data, modalities{m})
-        chanind = indchantype(BF.data.D, modalities{m}, 'GOOD');
-        if isempty(chanind)
-            error(['No good ' modalities{m} ' channels were found.']);
-        end
-        S.channels=chanind;
-        
-        BF.features.(modalities{m}) = feval(['bf_features_' plugin_name], BF, S);                
-        
-        S1.modality = modalities{m};
-        
-        BF.features.(modalities{m}) = feval(['bf_regularise_' reg_name], BF, S1);
-        
-        BF.features.(modalities{m}).chanind = chanind;
+    chanind = indchantype(BF.data.D, modalities{m}, 'GOOD');
+    if isempty(chanind)
+        error(['No good ' modalities{m} ' channels were found.']);
     end
+    S.channels=chanind;
+    
+    if isequal(modalities{m}, 'EEG') || isequal(modalities{m}, {'EEG'})
+        modality_name  = 'EEG';
+    elseif isequal(modalities{m}, 'MEGPLANAR') || isequal(modalities{m}, {'MEGPLANAR'})
+        modality_name  = 'MEGPLANAR';
+    else
+        modality_name  = 'MEG';
+    end
+    
+    BF.features.(modality_name) = feval(['bf_features_' plugin_name], BF, S);
+    
+    S1.modality = modality_name;
+    
+    BF.features.(modality_name) = feval(['bf_regularise_' reg_name], BF, S1);
+    
+    BF.features.(modality_name).chanind = chanind;
 end
 
 BF.features.trials = S.trials;

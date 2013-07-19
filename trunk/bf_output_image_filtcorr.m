@@ -29,10 +29,12 @@ if nargin == 0
     modality.help    = {'Specify modality'};
     modality.labels  = {
         'MEG'
+        'MEGPLANAR'
         'EEG'
         }';
     modality.values  = {
         'MEG'
+        'MEGPLANAR'
         'EEG'
         }';
     modality.val = {'MEG'};
@@ -62,7 +64,7 @@ if mdist > 20
     warning(['Closest match is ' mdist ' mm away from the specified location.']);
 end
 
-ws =  BF.inverse.W.(S.modality){ind};
+ws =  BF.inverse.(S.modality).W{ind};
 [QA, dum] = qr(orth(ws'),0);
 
 spm('Pointer', 'Watch');drawnow;
@@ -76,7 +78,7 @@ pow = nan(1, nvert);
 for i = 1:nvert
     switch S.corrtype
         case 'filtfilt'
-            w = BF.inverse.W.(S.modality){i}';
+            w = BF.inverse.(S.modality).W{i}';
         case 'filtlf'
             w =  BF.sources.L.(S.modality){i};
     end

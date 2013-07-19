@@ -88,11 +88,13 @@ if nargin == 0
     modality.help    = {'Specify modality'};
     modality.labels  = {
         'MEG'
+        'MEGPLANAR'
         'EEG'
         }';
     
     modality.values  = {
         'MEG'
+        'MEGPLANAR'
         'EEG'
         }';
     modality.val = {'MEG'};
@@ -149,7 +151,7 @@ ntrials   = length(alltrials);
 nphase  = length(S.phasefreq);
 namp    = length(S.ampfreq);
 
-W = BF.inverse.W.(S.modality);
+W = BF.inverse.(S.modality).W;
 nvert = numel(W);
 
 spm_progress_bar('Init', nvert, ...

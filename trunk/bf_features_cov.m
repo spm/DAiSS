@@ -100,6 +100,8 @@ for i = 1:ntrials
     end
 end
 
+spm_progress_bar('Clear');
+
 N = ntrials*nsamples*nwoi;
 
 C = YY./N; 
