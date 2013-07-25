@@ -88,12 +88,13 @@ if nargin == 0
     name.num = [1 Inf];
     name.help = {'Reference channel name.'};
     
-    shuffle         = cfg_menu;
+    shuffle         = cfg_entry;
     shuffle.tag     = 'shuffle';
     shuffle.name    = 'Shuffle';
-    shuffle.help    = {'Shuffle the reference channel to produce the null case.'};
-    shuffle.labels  = {'yes', 'no'};
-    shuffle.values  = {1, 0};
+    shuffle.strtype = 'w';
+    shuffle.num     = [1 1];
+    shuffle.help    = {'Shuffle the reference channel to produce the null case.',...
+        'Specify the number of shufflings'};  
     shuffle.val = {0};
     
     feature         = cfg_menu;
@@ -260,8 +261,11 @@ end
 pac   = nan(nphase, namp, nvert);
 
 if S.shuffle
-    spac = pac;
-    sind = randperm(ntrials);
+    spac = repmat(pac, [1 1 1 S.shuffle]);
+    sind = zeros(S.shuffle, ntrials);
+    for s = 1:S.shuffle
+      sind(s, :) = randperm(ntrials);
+    end
 end
 
 for f = 1:length(freqoi)
@@ -307,7 +311,7 @@ for f = 1:length(freqoi)
                 for shuffle = 0:S.shuffle
                     if shuffle
                         rYh = reshape(rYh, nsamples, ntrials);
-                        rYh = rYh(:, sind);
+                        rYh = rYh(:, sind(shuffle, :));
                         rYh = rYh(:)';
                     end
                     
@@ -326,13 +330,13 @@ for f = 1:length(freqoi)
                     switch ref_feature
                         case 'amplitude'
                             if shuffle
-                                spac(f, j, i) = cpac;
+                                spac(f, j, i, shuffle) = cpac;
                             else
                                 pac(f, j, i) = cpac;
                             end
                         case 'phase'
                             if shuffle
-                                spac(j, f, i) = cpac;
+                                spac(j, f, i, shuffle) = cpac;
                             else
                                 pac(j, f, i) = cpac;
                             end
@@ -367,18 +371,17 @@ for f = 1:nphase
     end
 end
 
-if S.shuffle
-    
+for shuffle = 1:S.shuffle
     if max(nphase, namp)>1
-        image(c).val     = squeeze(sum(sum(spac, 2), 1));
-        image(c).label   = ['shuffled_pac_total_'  spm_file(D.fname, 'basename')];
+        image(c).val     = squeeze(sum(sum(spac(:,:,:, shuffle), 2), 1));
+        image(c).label   = ['shuffled' num2str(shuffle) '_pac_total_'  spm_file(D.fname, 'basename')];
         c = c+1;
     end
     
     for f = 1:nphase
         for g = 1:namp
-            image(c).val     = squeeze(spac(f, g, :));
-            image(c).label   = ['shuffled_pac_phase_' num2str(S.phasefreq(f)) 'Hz_amp_'...
+            image(c).val     = squeeze(spac(f, g, :, shuffle));
+            image(c).label   = ['shuffled' num2str(shuffle) '_pac_phase_' num2str(S.phasefreq(f)) 'Hz_amp_'...
                 num2str(S.ampfreq(g)) 'Hz_' spm_file(D.fname, 'basename')];
             c = c+1;
         end
