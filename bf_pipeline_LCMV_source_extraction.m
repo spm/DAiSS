@@ -17,7 +17,6 @@ matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(3)
 matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.useheadshape = 0;
 matlabbatch{1}.spm.meeg.source.headmodel.forward.eeg = 'EEG BEM';
 matlabbatch{1}.spm.meeg.source.headmodel.forward.meg = 'Single Shell';
-matlabbatch{2}.spm.tools.beamforming.data.dir = {'D:\Data\SPM testing\MEG\BF\'};
 matlabbatch{2}.spm.tools.beamforming.data.D(1) = cfg_dep('M/EEG head model specification: M/EEG dataset(s) with a forward model', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','D'));
 matlabbatch{2}.spm.tools.beamforming.data.val = 1;
 matlabbatch{2}.spm.tools.beamforming.data.space = 'MNI-aligned';
