@@ -7,10 +7,17 @@ function res = bf_inverse_lcmv(BF, S)
 
 %--------------------------------------------------------------------------
 if nargin == 0
-    lcmv      = cfg_const;
+    keeplf        = cfg_menu;
+    keeplf.tag    = 'keeplf';
+    keeplf.name   = 'Keep oriented leadfields';
+    keeplf.labels = {'yes', 'no'};
+    keeplf.values = {true, false};
+    keeplf.val    = {false};
+    
+    lcmv      = cfg_branch;
     lcmv.tag  = 'lcmv';
     lcmv.name = 'LCMV';
-    lcmv.val  = {0};
+    lcmv.val  = {keeplf};
     res = lcmv;
     
     return
@@ -45,6 +52,10 @@ for i = 1:nvert
         
         % construct the spatial filter
         W{i} = lf'*invCy/(lf' * invCy * lf);
+        
+        if S.keeplf
+            L{i} = lf;
+        end
     else
         W{i} = NaN;
     end
@@ -58,3 +69,4 @@ end
 spm_progress_bar('Clear');
 
 res.W = W;
+res.L = L;

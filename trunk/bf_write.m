@@ -43,7 +43,7 @@ outdir = spm_file(job.BF{1}, 'fpath');
 
 cd(outdir);
 
-BF = bf_load('BF.mat', {'data', 'sources', 'output'});
+BF = bf_load('BF.mat', {'data', 'sources', 'features', 'output'});
 
 plugin_name   = cell2mat(fieldnames(job.plugin));
 

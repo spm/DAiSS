@@ -78,7 +78,7 @@ else
     addchannels = {};
 end
 
-usemontage = 0; % Might want to support writing out data directly from BF.output in the future
+usemontage = 0; 
 
 if isfield(BF.output, 'montage')
     
@@ -100,6 +100,53 @@ if isfield(BF.output, 'montage')
         na = numel(addchannels);
         montage.tra((end+1):(end+na), (end+1):(end+na)) = eye(na);
     end
+elseif isfield(BF.output, 'sourcedata')
+    ftdata = BF.output.sourcedata.(S.modality).ftdata;
+    
+    if ~isempty(addchannels)
+        addind = D.indchannel(addchannels);
+        ftdata.label = [ftdata.label;D.chanlabels(addind)'];
+        if numel(ftdata.trial) == length(BF.features.trials)
+            for i = 1:numel(ftdata.trial)
+                ftdata.trial{i} = [ftdata.trial{i};D(D.addind, D.indsample(ftdata.time{i}), BF.features.trials(i))];
+            end
+        else
+            error('Cannot match trials for adding extra channels.')
+        end
+    end
+    
+    Ds = spm_eeg_ft2spm(ftdata, [S.prefix D.fname]);
+    Ds = trialonset(Ds, ':', D.trialonset);
+    
+    if isfield(BF.output.sourcedata.(S.modality), 'events')
+        for i = 1:Ds.ntrials
+            evold = events(D, BF.features.trials(i));
+            if iscell(evold)
+                evold = evold{1};
+            end
+            
+            evnew = BF.output.sourcedata.(S.modality).events;
+            if iscell(evnew)
+                evnew = evnew{i};
+            end
+            
+            ev = spm_cat_struct(evold, evnew);
+            
+            Ds = events(Ds, i, ev);
+        end
+    else
+        Ds = events(Ds, ':', D.events);
+    end
+    
+    Ds = chantype(Ds, ':', 'LFP');
+    
+    if ~isempty(addchannels)
+         Ds = chantype(Ds, (D.nchannels-length(addind)+1):D.nchannels, D.chantype(addind));
+    end
+    
+    save(Ds);
+    
+    D = Ds;
 else
     error('Unsupported option');
 end
