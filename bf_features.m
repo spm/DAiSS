@@ -128,7 +128,7 @@ D  = BF.data.D;
 
 plugin_name = cell2mat(fieldnames(job.plugin));
 S         = job.plugin.(plugin_name);
-S.samples = {};
+S(1).samples = {};
 
 for i = 1:size(job.woi, 1)
     S.samples{i} = D.indsample(1e-3*job.woi(i, 1)):D.indsample(1e-3*job.woi(i, 2));
