@@ -156,7 +156,14 @@ if isfield(S.isdesign,'custom'),
     %% gui specified conditions and contrast
     
     samples = {};
-    woi=S.isdesign.custom.woi./1000;
+    
+    woiind=D.indsample(woi/1000);
+    woi=D.time(woiind); %% in seconds
+    
+    duration=unique(woiind(:,2)-woiind(:,1))./D.fsample; %% in sec
+    if numel(duration)>1,
+        error('both windows need to be the same length');
+    end;
     
     duration=unique(woi(:,2)-woi(:,1));
     if numel(duration)>1,
