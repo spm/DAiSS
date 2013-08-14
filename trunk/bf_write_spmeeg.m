@@ -108,7 +108,7 @@ elseif isfield(BF.output, 'sourcedata')
         ftdata.label = [ftdata.label;D.chanlabels(addind)'];
         if numel(ftdata.trial) == length(BF.features.trials)
             for i = 1:numel(ftdata.trial)
-                ftdata.trial{i} = [ftdata.trial{i};D(D.addind, D.indsample(ftdata.time{i}), BF.features.trials(i))];
+                ftdata.trial{i} = [ftdata.trial{i};D(addind, D.indsample(ftdata.time{i}(1)):D.indsample(ftdata.time{i}(end)), BF.features.trials(i))];
             end
         else
             error('Cannot match trials for adding extra channels.')
@@ -141,7 +141,7 @@ elseif isfield(BF.output, 'sourcedata')
     Ds = chantype(Ds, ':', 'LFP');
     
     if ~isempty(addchannels)
-         Ds = chantype(Ds, (D.nchannels-length(addind)+1):D.nchannels, D.chantype(addind));
+         Ds = chantype(Ds, (Ds.nchannels-length(addind)+1):Ds.nchannels, D.chantype(addind));
     end
     
     save(Ds);

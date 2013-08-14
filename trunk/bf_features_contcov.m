@@ -28,7 +28,7 @@ samples = S.samples{1};
 
 bad  = badsamples(D, S.channels, samples, 1);
 
-chngpnt = [1 find(any(diff(bad, [], 2)))];
+chngpnt = [1 find(any(diff(bad, [], 2)))+1];
 
 nsegments = length(chngpnt);
 
