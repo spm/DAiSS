@@ -154,9 +154,8 @@ D = BF.data.D;
 
 if isfield(S.isdesign,'custom'),
     %% gui specified conditions and contrast
-    
-    samples = {};
-    
+        
+    woi = S.isdesign.custom.woi;
     woiind=D.indsample(woi/1000);
     woi=D.time(woiind); %% in seconds
     
