@@ -7,6 +7,13 @@ function res = bf_inverse_lcmv(BF, S)
 
 %--------------------------------------------------------------------------
 if nargin == 0
+    orient        = cfg_menu;
+    orient.tag    = 'orient';
+    orient.name   = 'Orient to maximum power';
+    orient.labels = {'yes', 'no'};
+    orient.values = {true, false};
+    orient.val    = {true};
+    
     keeplf        = cfg_menu;
     keeplf.tag    = 'keeplf';
     keeplf.name   = 'Keep oriented leadfields';
@@ -17,7 +24,7 @@ if nargin == 0
     lcmv      = cfg_branch;
     lcmv.tag  = 'lcmv';
     lcmv.name = 'LCMV';
-    lcmv.val  = {keeplf};
+    lcmv.val  = {orient, keeplf};
     res = lcmv;
     
     return
@@ -45,13 +52,15 @@ for i = 1:nvert
     if ~isnan(L{i})
         lf    = U'*L{i};
         
-        % Robert's code
-        [u, dum] = svd(real(pinv_plus(lf' * invCy *lf, reduce_rank, 0)),'econ');
-        eta = u(:,1);
-        lf  = lf * eta;
+        if S.orient
+            % Robert's code
+            [u, dum] = svd(real(pinv_plus(lf' * invCy *lf, reduce_rank, 0)),'econ');
+            eta = u(:,1);
+            lf  = lf * eta;
+        end
         
         % construct the spatial filter
-        W{i} = lf'*invCy/(lf' * invCy * lf);
+        W{i} = (lf' * invCy * lf)\lf'*invCy;
         
         if S.keeplf
             L{i} = lf;

@@ -6,7 +6,7 @@ function sourcedata_robust = bf_output_sourcedata_robust(BF, S)
 % $Id$
 
 %--------------------------------------------------------------------------
-if nargin == 0    
+if nargin == 0
     method = cfg_menu;
     method.tag = 'method';
     method.name = 'Summary method';
@@ -57,7 +57,7 @@ for m  = 1:numel(modalities)
         else
             id(chngpnt(i):end) = spm_data_id(chanind(goodind));
         end
-            
+        
         ev(i).type  = 'artefact_filterchange';
         ev(i).value = id(chngpnt(i));
         ev(i).time  = D.time(samples(chngpnt(i))) - D.time(1) + D.trialonset(1);
@@ -73,6 +73,7 @@ for m  = 1:numel(modalities)
     
     if isfield(BF.sources, 'voi')
         ftdata.label = BF.sources.voi.label(:);
+        lbl = {};
         for v = 1:numel(ftdata.label)
             ind = find(BF.sources.voi.pos2voi == v);
             W      = cat(1, BF.inverse.(modalities{m}).W{ind});
@@ -87,13 +88,11 @@ for m  = 1:numel(modalities)
                     
                     L{v}        = L{v}(:, mi);
                     
-                    V           = 1;
+                case 'keep'
+                    for i = 1:size(L{v}, 2)
+                        lbl{end+1, 1} = [ftdata.label{v} '_' num2str(i)];
+                    end
                     
-                case 'svd'
-                    %% just take top pca component for now
-                    Wc            = W* BF.features.(modalities{m}).C*W'; % bf estimated source covariance matrix
-                    [V, dum, dum] = svd(Wc);
-                    V             = V(:,1)';
             end
         end
     else
@@ -107,7 +106,11 @@ for m  = 1:numel(modalities)
         end
     end
     
-    data  = nan(length(ftdata.label), length(samples));
+    if isempty(lbl)
+        lbl = ftdata.label;
+    end
+    
+    data  = nan(length(lbl), length(samples));
     C    = BF.features.(modalities{m}).C;
     
     spm('Pointer', 'Watch');drawnow;
@@ -119,16 +122,19 @@ for m  = 1:numel(modalities)
         goodind = ~bad(:, find(id==uid(i), 1, 'first'));
         Cy    = C(goodind, goodind);
         invCy = pinv_plus(Cy);
+        
+        n = 1;
         for j = 1:length(ftdata.label)
             w = [];
             for k = 1:size(L{j}, 2)
                 lf    = L{j}(goodind, k);
                 
-                w     = [w; lf'*invCy/(lf' * invCy * lf)];
+                w     = [w; lf'*invCy/(lf' * invCy * lf)];                               
             end
-            w  = v*w;
             
-            data(j, id==uid(i)) = w*D(chanind(goodind), find(id==uid(i)));
+            data(n:(n+size(w, 1)-1), id==uid(i)) = w*D(chanind(goodind), find(id==uid(i)));
+            
+            n = n+size(w, 1);
         end
         if ismember(i, Ibar)
             spm_progress_bar('Set', i); drawnow;
@@ -139,7 +145,8 @@ for m  = 1:numel(modalities)
     
     ftdata.trial{1} = data;
     ftdata.time{1}  = D.time(samples);
-
+    ftdata.label    = lbl;
+    
     sourcedata_robust.(modalities{m}).ftdata = ftdata;
     sourcedata_robust.(modalities{m}).events = ev;
 end
