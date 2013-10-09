@@ -18,9 +18,9 @@ if nargin == 0
     method = cfg_menu;
     method.tag = 'method';
     method.name = 'Summary method';
-    method.labels = {'max', 'svd'};
+    method.labels = {'max', 'svd', 'keep'};
     method.val = {'max'};
-    method.values = {'max', 'svd'};
+    method.values = {'max', 'svd', 'keep'};
     method.help = {'How to summarise sources in the ROI'};
     
     mont = cfg_branch;
@@ -58,7 +58,7 @@ for m  = 1:numel(modalities)
                     %% just take top pca component for now
                     Wc          = W* BF.features.(modalities{m}).C*W'; % bf estimated source covariance matrix
                     [V,dum,dum]=svd(Wc);
-                    montage.tra=[montage.tra;V(:,1)'*W*U'];
+                    montage.tra=[montage.tra;V(:,1)'*W*U'];                    
                     
             end
         end
