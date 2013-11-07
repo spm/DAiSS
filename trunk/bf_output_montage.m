@@ -18,9 +18,9 @@ if nargin == 0
     method = cfg_menu;
     method.tag = 'method';
     method.name = 'Summary method';
-    method.labels = {'max', 'svd'};
+    method.labels = {'max', 'svd', 'keep'};
     method.val = {'max'};
-    method.values = {'max', 'svd'};
+    method.values = {'max', 'svd', 'keep'};
     method.help = {'How to summarise sources in the ROI'};
     
     mont = cfg_branch;
@@ -43,6 +43,7 @@ for m  = 1:numel(modalities)
     montage.tra      = [];
     if isfield(BF.sources, 'voi')
         montage.labelnew = BF.sources.voi.label;
+        lbl = {};
         for v = 1:numel(montage.labelnew)
             ind = find(BF.sources.voi.pos2voi == v);
             W   = cat(1, BF.inverse.(modalities{m}).W{ind});
@@ -58,9 +59,18 @@ for m  = 1:numel(modalities)
                     %% just take top pca component for now
                     Wc          = W* BF.features.(modalities{m}).C*W'; % bf estimated source covariance matrix
                     [V,dum,dum]=svd(Wc);
-                    montage.tra=[montage.tra;V(:,1)'*W*U'];                    
+                    montage.tra=[montage.tra;V(:,1)'*W*U'];
                     
+                case 'keep'
+                    montage.tra = [montage.tra; W*U'];
+                    for i = 1:size(W, 1)
+                        lbl{end+1, 1} = [montage.labelnew{v} '_' num2str(i)];
+                    end
             end
+        end
+        
+        if ~isempty(lbl)
+            montage.labelnew = lbl;
         end
     else
         mnipos = spm_eeg_inv_transform_points(BF.data.transforms.toMNI, BF.sources.pos);
@@ -72,6 +82,8 @@ for m  = 1:numel(modalities)
             end
         end
     end
+    
+    
     
     mont.(modalities{m}) = montage;
 end
