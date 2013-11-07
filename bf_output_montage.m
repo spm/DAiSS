@@ -18,9 +18,9 @@ if nargin == 0
     method = cfg_menu;
     method.tag = 'method';
     method.name = 'Summary method';
-    method.labels = {'max', 'svd', 'keep'};
+    method.labels = {'max', 'svd'};
     method.val = {'max'};
-    method.values = {'max', 'svd', 'keep'};
+    method.values = {'max', 'svd'};
     method.help = {'How to summarise sources in the ROI'};
     
     mont = cfg_branch;
