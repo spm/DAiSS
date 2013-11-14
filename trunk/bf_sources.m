@@ -75,7 +75,7 @@ for m = 1:numel(modalities)
     if isfield(BF.data, modalities{m})
         
         if isequal(modalities{m}, 'MEG')
-            chanind = indchantype(BF.data.D, 'MEGANY', 'GOOD');
+            chanind = indchantype(BF.data.D, {'MEG', 'MEGPLANAR'}, 'GOOD');
         elseif isequal(modalities{m}, 'EEG')
             chanind = indchantype(BF.data.D, 'EEG', 'GOOD');
         end
