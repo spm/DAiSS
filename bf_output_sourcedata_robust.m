@@ -70,10 +70,10 @@ for m  = 1:numel(modalities)
     end
     
     ftdata = [];
-    
+    lbl = {};
+
     if isfield(BF.sources, 'voi')
         ftdata.label = BF.sources.voi.label(:);
-        lbl = {};
         for v = 1:numel(ftdata.label)
             ind = find(BF.sources.voi.pos2voi == v);
             W      = cat(1, BF.inverse.(modalities{m}).W{ind});
@@ -104,6 +104,7 @@ for m  = 1:numel(modalities)
                 L{i}            = BF.inverse.(modalities{m}).L{i};
             end
         end
+        ftdata.label = ftdata.label(:);
     end
     
     if isempty(lbl)
