@@ -60,7 +60,7 @@ for i = 1:nvert
         end
         
         % construct the spatial filter
-        W{i} = (lf' * invCy * lf)\lf'*invCy;
+        W{i} = pinv_plus(lf' * invCy * lf, reduce_rank, 0)*lf'*invCy;
         
         if S.keeplf
             L{i} = lf;
