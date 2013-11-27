@@ -97,6 +97,7 @@ if exist(fullfile(pwd,'BF.mat'),'file') && ~job.overwrite
 end
 
 BF        = [];
+
 BF.data.D = D;
 BF.data.mesh = D.inv{val}.mesh;
 
@@ -114,89 +115,124 @@ istemplate = D.inv{val}.mesh.template;
 
 if megind > 0
     
-    vol      = D.inv{val}.forward(megind).vol;
+    siunits  = isfield(D.inv{val}.forward(megind), 'siunits') &&...
+        D.inv{val}.forward(megind).siunits;
+    
     datareg  = D.inv{val}.datareg(megind);
+    forward  = D.inv{val}.forward(megind);
+    
+    vol      = forward.vol;
     
     if isequal(gradsource, 'inv')
-        sens     = datareg.sensors;
+        if siunits
+            sens     =  forward.sensors;
+            toMNI    =  forward.toMNI;
+            to_mm    = diag([1e3 1e3 1e3 1]);
+        else
+            sens     = datareg.sensors;
+            toMNI    = datareg.toMNI;
+            to_mm    = eye(4);
+        end
     else
         sens     = D.sensors('MEG');
+    end      
+    
+    if isfield(forward, 'mesh_correction')
+        BF.data.MEG.mesh_correction = forward.mesh_correction;
+    else
+        BF.data.MEG.mesh_correction = [];
     end
-
-    M = datareg.toMNI;
+      
+    if siunits
+        sens  = ft_convert_units(sens, 'm');
+    end
+    
+    M          = to_mm\toMNI;
     [U, L, V]  = svd(M(1:3, 1:3));
-    M(1:3,1:3) = U*V';
+    M(1:3,1:3) = U*V';    
     
     switch space
         case 'MNI-aligned'            
             BF.data.MEG.vol  = ft_transform_vol(M, vol);
             BF.data.MEG.sens = ft_transform_sens(M, sens);            
             
-            BF.data.transforms.toMNI         = datareg.toMNI/M;
-            BF.data.transforms.toMNI_aligned = eye(4);
+            BF.data.transforms.toMNI         = toMNI/M;
+            BF.data.transforms.toMNI_aligned = to_mm;
             BF.data.transforms.toHead        = inv(M);
             BF.data.transforms.toNative      = D.inv{val}.mesh.Affine\BF.data.transforms.toMNI;
         case 'Head'
             BF.data.MEG.vol  = vol;
             BF.data.MEG.sens = sens;     
             
-            BF.data.transforms.toMNI         = datareg.toMNI;
-            BF.data.transforms.toMNI_aligned = M;
+            BF.data.transforms.toMNI         = toMNI;
+            BF.data.transforms.toMNI_aligned = to_mm*M;
             BF.data.transforms.toHead        = eye(4);
             BF.data.transforms.toNative      = D.inv{val}.mesh.Affine\BF.data.transforms.toMNI;
         case 'Native'
-            if istemplate
-                error('Cannot work in Native space with template head, use MNI-aligned.');
-            end
-            
-            BF.data.MEG.vol  = ft_transform_vol(D.inv{val}.mesh.Affine\datareg.toMNI, vol);
-            BF.data.MEG.sens = ft_transform_vol(D.inv{val}.mesh.Affine\datareg.toMNI, sens);
-            
-            BF.data.transforms.toMNI         = D.inv{val}.mesh.Affine;
-            BF.data.transforms.toMNI_aligned = M*datareg.fromMNI*BF.data.transforms.toMNI;
-            BF.data.transforms.toHead        = datareg.fromMNI*BF.data.transforms.toMNI;
-            BF.data.transforms.toNative      = eye(4);
+           error('Native coordinates option is deprecated for MEG.');
     end
 end
             
 
 if eegind > 0
-    vol      = D.inv{val}.forward(eegind).vol;
+    siunits  = isfield(D.inv{val}.forward(eegind), 'siunits') &&...
+        D.inv{val}.forward(eegind).siunits;
+        
+    forward  = D.inv{val}.forward(eegind);    
     datareg  = D.inv{val}.datareg(eegind);
-    sens     = datareg.sensors;
+    
+    vol      = forward.vol;
+    
+    if siunits
+        sens     = forward.sensors;
+        toMNI    = forward.toMNI;
+        to_mm    = diag([1e3 1e3 1e3 1]);
+    else
+        sens     = datareg.sensors;
+        toMNI    = datareg.toMNI;
+        to_mm    = eye(4);
+    end   
     
     BF.data.EEG.vol  = vol;        
     BF.data.EEG.sens = sens;             
-        
+                
+    if isfield(forward, 'mesh_correction')
+        BF.data.EEG.mesh_correction = forward.mesh_correction;
+    else
+        BF.data.EEG.mesh_correction = [];
+    end
+    
     if isfield(BF.data, 'transforms')  % With MEG
-        if ~istemplate && isequal(space, 'Native')
-            BF.data.EEG.vol  = vol;
-            BF.data.EEG.sens = sens;
-        elseif istemplate
+        if istemplate
             error('Combining EEG and MEG cannot be done with template head for now.');
         else
             if isa(vol, 'char')
                 vol = ft_read_vol(vol);
             end
             
-            BF.data.EEG.vol  = ft_transform_vol(inv(BF.data.transforms.toNative), vol);
-            BF.data.EEG.sens = ft_transform_sens(inv(BF.data.transforms.toNative), sens);
+            fromNative = inv(BF.data.transforms.toNative);
+            
+            if siunits
+                fromNative = to_mm\fromNative;
+            end
+            
+            BF.data.EEG.vol  = ft_transform_vol(fromNative, vol);
+            BF.data.EEG.sens = ft_transform_sens(fromNative, sens);
         end
     else                             % EEG only        
-        M = datareg.toMNI;
+        M          = to_mm\toMNI;
         [U, L, V]  = svd(M(1:3, 1:3));
         M(1:3,1:3) = U*V';
-        
         
         switch space
             case 'Native'
                 BF.data.EEG.vol  = vol;
                 BF.data.EEG.sens = sens;
                 
-                BF.data.transforms.toMNI         = datareg.toMNI;
-                BF.data.transforms.toMNI_aligned = M;
-                BF.data.transforms.toHead        = eye(4); % Lets define Native and Head 
-                BF.data.transforms.toNative      = eye(4); % to be the same thing in this case
+                BF.data.transforms.toMNI         = toMNI;
+                BF.data.transforms.toMNI_aligned = to_mm*M;
+                BF.data.transforms.toHead        = eye(4); 
+                BF.data.transforms.toNative      = to_mm; 
             case {'MNI-aligned'}
                 if isa(vol, 'char')
                     vol = ft_read_vol(vol);
@@ -205,17 +241,18 @@ if eegind > 0
                 BF.data.EEG.vol  = ft_transform_vol(M, vol);
                 BF.data.EEG.sens = ft_transform_sens(M, sens);
                 
-                BF.data.transforms.toMNI         = datareg.toMNI/M;
-                BF.data.transforms.toMNI_aligned = eye(4);
+                BF.data.transforms.toMNI         = toMNI/M;
+                BF.data.transforms.toMNI_aligned = to_mm;
                 BF.data.transforms.toHead        = inv(M);
-                BF.data.transforms.toNative      = inv(M);
+                BF.data.transforms.toNative      = to_mm/M;
             case {'Head'}              
                error('Head space is not defined for EEG data');
         end
     end
 end
 
-BF.data.space = space;
+BF.data.space   = space;
+BF.data.siunits = siunits;
 
 bf_save(BF, 'overwrite');
 
