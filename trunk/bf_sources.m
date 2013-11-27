@@ -35,11 +35,18 @@ for i = 1:numel(source_funs)
     plugin.values{i} = feval(spm_file(source_funs{i},'basename'));
 end
 
+visualise = cfg_menu;
+visualise.tag = 'visualise';
+visualise.name = 'Visualise head model and sources';
+visualise.help = {'Visualise head model and sourses to verify that everythin was done correctly'};
+visualise.labels = {'yes', 'no'};
+visualise.values = {1, 0};
+visualise.val = {1};
 
 out = cfg_exbranch;
 out.tag = 'sources';
 out.name = 'Define sources';
-out.val = {BF, reduce_rank, plugin};
+out.val = {BF, reduce_rank, plugin, visualise};
 out.help = {'Define source space for beamforming'};
 out.prog = @bf_source_run;
 out.vout = @bf_source_vout;
@@ -84,13 +91,49 @@ for m = 1:numel(modalities)
             error(['No good ' modalities{m} ' channels were found.']);
         end
         
-        if ischar(BF.data.(modalities{m}).vol),
-            tmp=load(BF.data.(modalities{m}).vol);
-            BF.data.(modalities{m}).vol=tmp.vol;
+        if ischar(BF.data.(modalities{m}).vol),           
+            BF.data.(modalities{m}).vol = ft_read_vol(BF.data.(modalities{m}).vol);
         end;
+               
         
         [vol, sens] = ft_prepare_vol_sens(BF.data.(modalities{m}).vol, BF.data.(modalities{m}).sens, 'channel', ...
             chanlabels(BF.data.D, chanind));
+        
+        pos = BF.sources.pos;
+                
+        if isfield(BF.data.(modalities{m}), 'mesh_correction') && ~isempty(BF.data.(modalities{m}).mesh_correction)
+            disp(['Adjusting source points for volume type ' ft_voltype(vol)]);
+            cfg     = BF.data.(modalities{m}).mesh_correction;
+            cfg.vol      = vol;
+            cfg.grid.pos = pos;
+            gridcorrect  = ft_prepare_sourcemodel(cfg);
+            
+            pos          = gridcorrect.pos;
+        end
+        
+        if job.visualise
+            F = spm_figure('GetWin', modalities{m});clf;
+            
+            if ismac
+                set(F,'renderer','zbuffer');
+            else
+                set(F,'renderer','OpenGL');
+            end
+            
+            ft_plot_vol(vol, 'edgecolor', [0 0 0], 'facealpha', 0);
+            
+            hold on
+            
+            ft_plot_sens(sens, 'style', '*b');
+            
+            plot3(pos(:, 1), pos(:, 2), pos(:, 3), '.r', 'MarkerSize', 10);
+            
+            rotate3d on;
+            
+            axis off
+            axis vis3d
+            axis equal
+        end
         
         spm('Pointer', 'Watch');drawnow;
         spm_progress_bar('Init', nvert, ['Computing ' modalities{m} ' leadfields']); drawnow;
@@ -121,7 +164,7 @@ for m = 1:numel(modalities)
         BF.sources.reduce_rank.(modalities{m})=reduce_rank(m); %MWW
         BF.sources.L.(modalities{m}) = L;
         BF.sources.channels.(modalities{m}) = chanlabels(BF.data.D, chanind);
-    end
+    end       
 end
 
 bf_save(BF);

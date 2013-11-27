@@ -54,14 +54,20 @@ switch S.space
         M1 = eye(4);
 end
 
-iskull = ft_transform_geometry(M1, iskull);
+iskull = ft_convert_units(ft_transform_geometry(M1, iskull));
+
 mn = min(iskull.pnt);
 mx = max(iskull.pnt);
 
+resolution = S.resolution;
 
-grid.xgrid = mn(1):S.resolution:mx(1);
-grid.ygrid = mn(2):S.resolution:mx(2);
-grid.zgrid = mn(3):S.resolution:mx(3);
+if isequal(iskull.unit, 'm')
+    resolution = 1e-3*resolution;
+end
+
+grid.xgrid = mn(1):resolution:mx(1);
+grid.ygrid = mn(2):resolution:mx(2);
+grid.zgrid = mn(3):resolution:mx(3);
 
 grid.dim   = [length(grid.xgrid) length(grid.ygrid) length(grid.zgrid)];
 [X, Y, Z]  = ndgrid(grid.xgrid, grid.ygrid, grid.zgrid);
@@ -70,10 +76,12 @@ pos   = [X(:) Y(:) Z(:)];
 
 inside = ft_inside_vol(pos, struct('bnd', iskull));
 
+pos    = spm_eeg_inv_transform_points(M2, pos);
+
 grid.allpos  = pos;
 grid.inside  = find(inside);
 grid.outside = find(~inside);
 
 grid.pos     = pos(inside, :);
 
-res = ft_transform_geometry(M2, grid);
+res = grid;
