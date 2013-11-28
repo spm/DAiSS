@@ -22,6 +22,14 @@ reduce_rank.num = [1 2];
 reduce_rank.val = {[2 3]};
 reduce_rank.help = {'Enter rank for MEG and EEG lead fields [MEG EEG]'};
 
+keep3d = cfg_menu;
+keep3d.tag = 'keep3d';
+keep3d.name = 'Keep the original orientations';
+keep3d.help = {'If not then the extra dimension is physically removed.'};
+keep3d.labels = {'yes', 'no'};
+keep3d.values = {1, 0};
+keep3d.val = {1};
+
 %--------------------------------------------------------------------------
 % method
 %--------------------------------------------------------------------------
@@ -46,7 +54,7 @@ visualise.val = {1};
 out = cfg_exbranch;
 out.tag = 'sources';
 out.name = 'Define sources';
-out.val = {BF, reduce_rank, plugin, visualise};
+out.val = {BF, reduce_rank, keep3d, plugin, visualise};
 out.help = {'Define source space for beamforming'};
 out.prog = @bf_source_run;
 out.vout = @bf_source_vout;
@@ -73,6 +81,8 @@ else
     BF.sources.ori = [];
 end
 
+siunits = isfield(BF.data, 'siunits') & BF.data.siunits;
+
 nvert = size(BF.sources.pos, 1);
 modalities = {'MEG', 'EEG'};
 reduce_rank=job.reduce_rank; 
@@ -95,6 +105,8 @@ for m = 1:numel(modalities)
             BF.data.(modalities{m}).vol = ft_read_vol(BF.data.(modalities{m}).vol);
         end;
                
+        chanunits = units(BF.data.D, chanind);
+        
         
         [vol, sens] = ft_prepare_vol_sens(BF.data.(modalities{m}).vol, BF.data.(modalities{m}).sens, 'channel', ...
             chanlabels(BF.data.D, chanind));
@@ -143,15 +155,17 @@ for m = 1:numel(modalities)
         L = cell(1, nvert);       
         
         for i = 1:nvert
-            if (1),%ft_inside_vol(BF.sources.pos(i, :), vol) % MWW
-                
-                L{i}  = ft_compute_leadfield(BF.sources.pos(i, :), sens, vol, 'reducerank', reduce_rank(m)); 
-
-                if ~isempty(BF.sources.ori)
-                    L{i}  = L{i}*BF.sources.ori(i, :)';
-                end
+            if siunits
+                L{i}  = ft_compute_leadfield(BF.sources.pos(i, :), sens, vol, 'reducerank', reduce_rank(m), 'dipoleunit', 'nA*m', 'chanunit', chanunits);
             else
-                L{i} = NaN;
+                L{i}  = ft_compute_leadfield(BF.sources.pos(i, :), sens, vol, 'reducerank', reduce_rank(m));
+            end
+            
+            if ~isempty(BF.sources.ori)
+                L{i}  = L{i}*BF.sources.ori(i, :)';
+            elseif ~job.keep3d &&  reduce_rank(m) < 3
+                 [U_, S_, V] = svd(L{i}, 'econ');
+                 L{i} = L{i}*V(:,1:reduce_rank(m));
             end
             
             if ismember(i, Ibar)

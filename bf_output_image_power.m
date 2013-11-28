@@ -80,6 +80,14 @@ if nargin == 0
     scale.values  = {1, 0};
     scale.val = {1};
     
+    powermethod         = cfg_menu;
+    powermethod.tag     = 'powermethod';
+    powermethod.name    = 'Power summary method';
+    powermethod.help    = {'How to summarise the power for vector beamformer'};
+    powermethod.labels  = {'trace', 'lambda1'};
+    powermethod.values  = {'trace', 'lambda1'};
+    powermethod.val = {'trace'};
+    
     modality         = cfg_menu;
     modality.tag     = 'modality';
     modality.name    = 'Modality';
@@ -99,7 +107,7 @@ if nargin == 0
     image_power      = cfg_branch;
     image_power.tag  = 'image_power';
     image_power.name = 'Power image';
-    image_power.val  = {whatconditions, sametrials, woi, contrast, result, scale, modality};
+    image_power.val  = {whatconditions, sametrials, woi, contrast, result, scale, powermethod, modality};
     
     res = image_power;
     
@@ -226,11 +234,24 @@ for c = 1:size(Cy, 1)
             w    = W{i};
             
             for j = 1:numel(Cy(c, :))
-                cpow(j) = w*Cy{c, j}*w';
-                
-                if S.scale
-                    np=w*scale*w';
-                    cpow(j)=cpow(j)./np;
+                p = w*Cy{c, j}*w';
+                if isscalar(p) || isequal(S.powermethod, 'trace')
+                    cpow(j) = trace(p);
+                    
+                    if S.scale
+                        np = trace(w*scale*w');
+                        cpow(j) = cpow(j)./np;
+                    end
+                elseif isequal(S.powermethod, 'lambda1')
+                    [u,s,v] = svd(real(p));
+                    cpow(j) = s(1);
+                     if S.scale
+                        w  = u(:, 1)'*w;
+                        np = w*scale*w';
+                        cpow(j) = cpow(j)./np;
+                    end
+                else
+                    error('Unsupported option')
                 end
             end
             
