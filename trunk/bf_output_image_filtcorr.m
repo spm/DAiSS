@@ -15,6 +15,17 @@ if nargin == 0
     pos.help = {'Locations for the seed in MNI coordinates (closest point is chosen'};
     pos.val = {};
     
+    label = cfg_entry;
+    label.tag = 'label';
+    label.name = 'Label';
+    label.strtype = 's';
+    label.help = {'Label for source of interest'};    
+    
+    seedspec = cfg_choice;
+    seedspec.tag = 'seedspec';
+    seedspec.name = 'Seed specification';
+    seedspec.values = {pos, label};
+    
     corrtype         = cfg_menu;
     corrtype.tag     = 'corrtype';
     corrtype.name    = 'Correlation type';
@@ -42,7 +53,7 @@ if nargin == 0
     filtcorr      = cfg_branch;
     filtcorr.tag  = 'image_filtcorr';
     filtcorr.name = 'Filter correlations image';
-    filtcorr.val  = {pos, corrtype, modality};
+    filtcorr.val  = {seedspec, corrtype, modality};
     
     res = filtcorr;
     
@@ -51,20 +62,29 @@ elseif nargin < 2
     error('Two input arguments are required');
 end
 
+nvert = size(BF.sources.pos, 1);
+
 % transform coords in MNI space into space where we are doing the beamforming
-seed = spm_eeg_inv_transform_points(inv(BF.data.transforms.toMNI), S.pos);
-pos  = BF.sources.pos;
-nvert = size(pos, 1);
-
-dist = sqrt(sum((pos - repmat(seed, nvert, 1)).^2, 2));
-
-[mdist, ind] = min(dist);
-
-if mdist > 20
-    warning(['Closest match is ' mdist ' mm away from the specified location.']);
+if isfield(S.seedspec, 'pos')
+    mnipos  = spm_eeg_inv_transform_points(BF.data.transforms.toMNI, BF.sources.pos);  
+    
+    dist = sqrt(sum((mnipos - repmat(S.seedspec.pos, nvert, 1)).^2, 2));
+    
+    [mdist, ind] = min(dist);
+    
+    if mdist > 20
+        warning(['Closest match is ' mdist ' mm away from the specified location.']);
+    end    
+else
+    if isfield(BF.inverse.(S.modality), 'label')
+        ind = strmatch(S.seedspec.label, BF.inverse.(S.modality).label, 'exact');
+    else
+        error('Filters are not labeled, use position to specify seed.');
+    end    
 end
 
 ws =  BF.inverse.(S.modality).W{ind};
+
 [QA, dum] = qr(orth(ws'),0);
 
 spm('Pointer', 'Watch');drawnow;
@@ -75,12 +95,14 @@ else Ibar = 1:nvert; end
 
 pow = nan(1, nvert);
 
+U     =  BF.features.(S.modality).U;
+
 for i = 1:nvert
     switch S.corrtype
         case 'filtfilt'
             w = BF.inverse.(S.modality).W{i}';
         case 'filtlf'
-            w =  BF.sources.L.(S.modality){i};
+            w =  U'*BF.sources.L.(S.modality){i};
     end
     
     if ~isnan(w)
@@ -88,7 +110,7 @@ for i = 1:nvert
         % when filters are more than 1D and be equivalent to correlation
         % coefficient for the 1D case        
         [QB, dum] = qr(orth(w),0);
-        [U Q V] = svd(QA'*QB);
+        [U_ Q V_] = svd(QA'*QB);
         pow(i) = sum(sum(Q));
     end
     
