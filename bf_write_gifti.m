@@ -39,10 +39,18 @@ if nargin == 0
         }';
     space.val = {'mni'};
     
+    visualise = cfg_menu;
+    visualise.tag = 'visualise';
+    visualise.name = 'Visualise the outputs';
+    visualise.help = {'Visualise the outputs in the graphics window.'};
+    visualise.labels = {'yes', 'no'};
+    visualise.values = {1, 0};
+    visualise.val = {0};
+    
     res      = cfg_branch;
     res.tag  = 'gifti';
     res.name = 'GIfTI';
-    res.val  = {normalise, space};
+    res.val  = {normalise, space, visualise};
     
     return
 elseif nargin < 2
@@ -99,6 +107,11 @@ for i = 1:nimages
     save(G, fname, 'ExternalFileBinary');
             
     res.files{i, 1} = fname;
+    
+    if S.visualise
+        Fgraph  = spm_figure('GetWin', fname); figure(Fgraph); clf
+        plot(gifti([BF.data.D.fname '.surf.gii']), gifti(fname));
+    end
     
     if ismember(i, Ibar)
         spm_progress_bar('Set', i); drawnow;

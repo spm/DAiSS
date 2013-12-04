@@ -41,7 +41,10 @@ for m  = 1:numel(modalities)
     montage.labelorg = BF.inverse.(modalities{m}).channels;
     montage.labelorg = montage.labelorg(:);
     montage.tra      = [];
-    if isfield(BF.sources, 'voi')
+    if isfield(BF.inverse.(modalities{m}), 'label')
+         montage.labelnew = BF.inverse.(modalities{m}).label(:);
+         montage.tra = cat(1, BF.inverse.(modalities{m}).W{:});
+    elseif isfield(BF.sources, 'voi')
         montage.labelnew = BF.sources.voi.label;
         lbl = {};
         for v = 1:numel(montage.labelnew)
@@ -71,7 +74,7 @@ for m  = 1:numel(modalities)
         
         if ~isempty(lbl)
             montage.labelnew = lbl;
-        end
+        end 
     else
         mnipos = spm_eeg_inv_transform_points(BF.data.transforms.toMNI, BF.sources.pos);
         for i = 1:size(mnipos, 1)
