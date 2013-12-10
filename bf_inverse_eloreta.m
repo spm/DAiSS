@@ -19,7 +19,7 @@ if nargin == 0
     regularisation.num = [1 1];
     regularisation.val = {0.05};
     regularisation.help = {'Optional regularization parameter (default is .05 corresponding ',...
-'to 5% of the average of the eigenvalues of some matrix to be inverted.)'};
+        'to 5% of the average of the eigenvalues of some matrix to be inverted.)'};
     
     
     eloreta      = cfg_branch;
@@ -30,7 +30,7 @@ if nargin == 0
         'Please cite',...
         'R.D. Pascual-Marqui: Discrete, 3D distributed, linear imaging methods of electric neuronal activity. Part 1: exact, zero',...
         'error localization. arXiv:0710.3341 [math-ph], 2007-October-17, http://arxiv.org/pdf/0710.3341'};
-
+    
     res = eloreta;
     
     return
@@ -42,27 +42,37 @@ U     =  BF.features.(S.modality).U;
 
 L = S.L;
 W = cell(size(L));
-
 nvert = numel(W);
 
+LL = [];
+
 spm('Pointer', 'Watch');drawnow;
-spm_progress_bar('Init', nvert, ['Computing ' S.modality ' filters']); drawnow;
+spm_progress_bar('Init', nvert, ['Preparing ' S.modality ' leadfields']); drawnow;
 if nvert > 100, Ibar = floor(linspace(1, nvert,100));
 else Ibar = 1:nvert; end
 
 for i = 1:nvert
-    if ~isnan(L{i})
-        lf    = U'*L{i};
-        
-        lf = reshape(lf, [size(lf, 1), 1, size(lf, 2)]);
-        
-        % construct the spatial filter
-        w = mkfilt_eloreta_v2(lf,S.regularisation);
-
-        W{i} = spm_squeeze(w, 2)';
-    else
-        W{i} = NaN;
+    lf = U'*L{i};
+    
+    lf = reshape(lf, [size(lf, 1), 1, size(lf, 2)]);
+    
+    LL = cat(2, LL, lf);
+    
+    if ismember(i, Ibar)
+        spm_progress_bar('Set', i); drawnow;
     end
+end
+
+
+% construct the spatial filter
+w = mkfilt_eloreta_v2(LL,S.regularisation);
+
+spm_progress_bar('Init', nvert, ['Preparing ' S.modality ' filters']); drawnow;
+if nvert > 100, Ibar = floor(linspace(1, nvert,100));
+else Ibar = 1:nvert; end
+
+for i = 1:nvert
+    W{i} = spm_squeeze(w(:, i, :), 2)';
     
     if ismember(i, Ibar)
         spm_progress_bar('Set', i); drawnow;
