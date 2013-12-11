@@ -42,7 +42,7 @@ elseif nargin < 2
     error('Two input arguments are required');
 end
 
-original = BF.data.mesh.tess_mni;
+original = export(gifti(BF.data.mesh.tess_ctx), 'spm');
 
 mesh = [];
 mesh.canonical = original;

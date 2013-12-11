@@ -76,8 +76,8 @@ if nargin == 0
     scale.tag     = 'scale';
     scale.name    = 'Scale power by filter norm';
     scale.help    = {'Scale power by norm of the filters'};
-    scale.labels  = {'yes', 'no'};
-    scale.values  = {1, 0};
+    scale.labels  = {'norm only', 'with noise', 'no scaling'};
+    scale.values  = {2, 1, 0};
     scale.val = {1};
     
     powermethod         = cfg_menu;
@@ -210,14 +210,17 @@ switch S.result
 end
 
 spm('Pointer', 'Watch');drawnow;
-if S.scale
+
+scale = eye(nchan);
+
+if S.scale == 1
     
     sigma = svd(sumYY);
     
     disp('Using spm_pca_order to get scaling factor');
     [M_opt,log_ev] = spm_pca_order(sumYY, N);
     
-    scale = eye(nchan).*sum(sigma(M_opt:end))./nchan;         
+    scale = scale.*sum(sigma(M_opt:end))./nchan;         
 end
 
 for c = 1:size(Cy, 1)

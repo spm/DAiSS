@@ -30,8 +30,8 @@ if nargin < 4 || isempty(gradsource)
     gradsource = 'inv';
 end  
 
-if nargin < 3 || isempty(space)
-    space = 'MNI-aligned';
+if nargin < 3
+    space = [];
 end
 
 if nargin < 2 || isempty(val)
@@ -101,6 +101,10 @@ if megind > 0 && ~isequal(modality, 'EEG')
     [U, L, V]  = svd(M(1:3, 1:3));
     M(1:3,1:3) = U*V';    
     
+    if isempty(space)
+        space = 'Head';
+    end
+    
     switch space
         case 'MNI-aligned'            
             data.MEG.vol  = ft_transform_vol(M, vol);
@@ -160,11 +164,7 @@ if eegind > 0 && ~strncmp(modality, 'MEG', 3)
                 vol = ft_read_vol(vol);
             end
             
-            fromNative = inv(data.transforms.toNative);
-            
-            if siunits
-                fromNative = to_mm\fromNative;
-            end
+            fromNative = data.transforms.toNative\to_mm;
             
             data.EEG.vol  = ft_transform_vol(fromNative, vol);
             data.EEG.sens = ft_transform_sens(fromNative, sens);
@@ -173,6 +173,10 @@ if eegind > 0 && ~strncmp(modality, 'MEG', 3)
         M          = to_mm\toMNI;
         [U, L, V]  = svd(M(1:3, 1:3));
         M(1:3,1:3) = U*V';
+        
+        if isempty(space)
+            space = 'Native';
+        end
         
         switch space
             case 'Native'
