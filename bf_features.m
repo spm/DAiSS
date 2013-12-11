@@ -170,9 +170,9 @@ for m = 1:numel(modalities)
     end
     S.channels=chanind;
     
-    if isequal(modalities{m}, 'EEG') || isequal(modalities{m}, {'EEG'})
+    if isequal(char(modalities{m}), 'EEG') 
         modality_name  = 'EEG';
-    elseif isequal(modalities{m}, 'MEGPLANAR') || isequal(modalities{m}, {'MEGPLANAR'})
+    elseif isequal(char(modalities{m}), 'MEGPLANAR')
         modality_name  = 'MEGPLANAR';
     else
         modality_name  = 'MEG';
