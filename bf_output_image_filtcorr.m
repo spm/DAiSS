@@ -86,6 +86,8 @@ end
 ws =  BF.inverse.(S.modality).W{ind};
 
 [QA, dum] = qr(orth(ws'),0);
+Q         = svd(QA'*QA);
+scale     = 1/sum(Q);
 
 spm('Pointer', 'Watch');drawnow;
 
@@ -102,7 +104,7 @@ for i = 1:nvert
         case 'filtfilt'
             w = BF.inverse.(S.modality).W{i}';
         case 'filtlf'
-            w =  U'*BF.sources.L.(S.modality){i};
+            w =  U'*BF.inverse.(S.modality).L{i};
     end
     
     if ~isnan(w)
@@ -110,8 +112,8 @@ for i = 1:nvert
         % when filters are more than 1D and be equivalent to correlation
         % coefficient for the 1D case        
         [QB, dum] = qr(orth(w),0);
-        [U_ Q V_] = svd(QA'*QB);
-        pow(i) = sum(sum(Q));
+        Q = svd(QA'*QB);
+        pow(i) = scale*sum(Q);
     end
     
     if ismember(i, Ibar)

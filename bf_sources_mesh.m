@@ -42,7 +42,7 @@ elseif nargin < 2
     error('Two input arguments are required');
 end
 
-original = export(gifti(BF.data.mesh.tess_ctx), 'spm');
+original = BF.data.mesh.tess_mni;
 
 mesh = [];
 mesh.canonical = original;
@@ -51,9 +51,9 @@ if S.fdownsample ~= 1
     mesh.canonical = export(gifti(reducepatch(export(gifti(mesh.canonical), 'patch'), 1/S.fdownsample)), 'spm');
 end
 
-if isfield(mesh, 'def')
-    mesh.individual = spm_swarp(gifti(mesh.canonical), mesh.def);
-    original        = spm_swarp(gifti(original), mesh.def);
+if isfield(BF.data.mesh, 'def')
+    mesh.individual = spm_swarp(gifti(mesh.canonical), BF.data.mesh.def);
+    original        = spm_swarp(gifti(original), BF.data.mesh.def);
 else
     mesh.individual = mesh.canonical;
 end

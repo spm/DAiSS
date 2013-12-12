@@ -105,6 +105,9 @@ for m = 1:numel(modalities)
     
     BF.inverse.(modalities{m}) = feval(['bf_inverse_' plugin_name], BF, S);
     BF.inverse.(modalities{m}).channels = channels;
+    if ~isfield(BF.inverse.(modalities{m}), 'L')
+        BF.inverse.(modalities{m}).L = S.L;
+    end
 end
 
 bf_save(BF);
