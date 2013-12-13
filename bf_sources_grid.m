@@ -65,9 +65,25 @@ if isequal(iskull.unit, 'm')
     resolution = 1e-3*resolution;
 end
 
-grid.xgrid = mn(1):resolution:mx(1);
-grid.ygrid = mn(2):resolution:mx(2);
-grid.zgrid = mn(3):resolution:mx(3);
+% If zero is inside the brain, make sure grid points fall on multiples of
+% resolution to ease simulating data from points on the grid
+if mn(1)<0 && mx(1)>0
+    grid.xgrid = [fliplr(0:-resolution:mn(1)) resolution:resolution:mx(1)];
+else
+    grid.xgrid = mn(1):resolution:mx(1);
+end
+
+if mn(2)<0 && mx(2)>0
+    grid.ygrid = [fliplr(0:-resolution:mn(2)) resolution:resolution:mx(2)];
+else
+    grid.ygrid = mn(2):resolution:mx(2);
+end
+
+if mn(3)<0 && mx(3)>0
+    grid.zgrid = [fliplr(0:-resolution:mn(3)) resolution:resolution:mx(3)];
+else
+    grid.zgrid = mn(3):resolution:mx(3);
+end
 
 grid.dim   = [length(grid.xgrid) length(grid.ygrid) length(grid.zgrid)];
 [X, Y, Z]  = ndgrid(grid.xgrid, grid.ygrid, grid.zgrid);
