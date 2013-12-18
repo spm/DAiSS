@@ -43,8 +43,8 @@ if nargin == 0
     visualise.tag = 'visualise';
     visualise.name = 'Visualise the outputs';
     visualise.help = {'Visualise the outputs in the graphics window.'};
-    visualise.labels = {'yes', 'no'};
-    visualise.values = {1, 0};
+    visualise.labels = {'inflated', 'yes', 'no'};
+    visualise.values = {2, 1, 0};
     visualise.val = {0};
     
     res      = cfg_branch;
@@ -110,7 +110,12 @@ for i = 1:nimages
     
     if S.visualise
         Fgraph  = spm_figure('GetWin', fname); figure(Fgraph); clf
-        plot(gifti([BF.data.D.fname '.surf.gii']), gifti(fname));
+        if S.visualise == 2
+            plot(spm_mesh_inflate(gifti([BF.data.D.fname '.surf.gii'])), gifti(fname));
+        else
+            plot(gifti([BF.data.D.fname '.surf.gii']), gifti(fname));
+        end
+        colormap jet
     end
     
     if ismember(i, Ibar)
