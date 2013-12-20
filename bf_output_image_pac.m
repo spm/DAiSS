@@ -94,7 +94,7 @@ if nargin == 0
     shuffle.strtype = 'w';
     shuffle.num     = [1 1];
     shuffle.help    = {'Shuffle the reference channel to produce the null case.',...
-        'Specify the number of shufflings'};  
+        'Specify the number of shufflings'};
     shuffle.val = {0};
     
     feature         = cfg_menu;
@@ -137,11 +137,35 @@ if nargin == 0
         }';
     modality.val = {'MEG'};
     
+    ncomp_amp         = cfg_entry;
+    ncomp_amp.tag     = 'ncomp_amp';
+    ncomp_amp.name    = 'Number of dipole orientations for AMPLITUDE';
+    ncomp_amp.strtype = 'r';
+    ncomp_amp.num     = [1 1];
+    ncomp_amp.val     = {1};
+    ncomp_amp.help    = {'Number of dipole orientations for each MEG source for amplitude'};
+    
+    ncomp_phase         = cfg_entry;
+    ncomp_phase.tag     = 'ncomp_phase';
+    ncomp_phase.name    = 'Number of dipole orientations for PHASE';
+    ncomp_phase.strtype = 'r';
+    ncomp_phase.num     = [1 1];
+    ncomp_phase.val     = {1};
+    ncomp_phase.help    = {'Number of dipole orientations for each MEG source for phase'};
+    
+    outputname = cfg_entry;
+    outputname.tag = 'outputname';
+    outputname.name = 'Name output images';
+    outputname.strtype = 's';
+    outputname.num = [1 Inf];
+    outputname.val = {['_']};
+    outputname.help = {'To specify details that will be added to the output images file names.'};
+    
     image_pac      = cfg_branch;
     image_pac.tag  = 'image_pac';
     image_pac.name = 'PAC image';
     image_pac.val  = {whatconditions, sametrials, shuffle, woi, phasefreq, ....
-        phaseres, ampfreq, ampres, reference, modality};
+        phaseres, ampfreq, ampres, reference, modality, ncomp_amp, ncomp_phase, outputname}; 
     
     res = image_pac;
     
@@ -149,6 +173,8 @@ if nargin == 0
 elseif nargin < 2
     error('Two input arguments are required');
 end
+
+ncomponents=S.ncomp_amp*S.ncomp_phase;
 
 D = BF.data.D;
 
@@ -221,7 +247,7 @@ end
 
 refsig = cell(1, length(freqoi));
 for j = 1:length(freqoi)
-    refsig{j} = zeros(size(Yr, 1), nsamples, ntrials);
+    refsig{j} = zeros(size(Yr, 1), nsamples-(2*round(D.fsample/6))+1, ntrials);
 end
 
 spm_progress_bar('Init', ntrials, ...
@@ -236,7 +262,8 @@ for i = 1:ntrials
         'filtdir', 'twopass', 'verbose', 0);
     
     for j = 1:length(freqoi)
-        refsig{j}(:,:,i) = spm_squeeze(spectrum(:, j, :), 2);
+        tmp = spm_squeeze(spectrum(:, j, :), 2);
+        refsig{j}(:,:,i) = tmp(:,round(D.fsample/6):end-round(D.fsample/6)); %to remove edge artefacts
     end
     
     if ismember(i, Ibar)
@@ -258,17 +285,26 @@ switch ref_feature
         width  = S.ampres;
 end
 
-pac   = nan(nphase, namp, nvert);
+if ncomponents>1
+    pac = nan(nphase, namp, nvert, ncomponents);
+else
+    pac = nan(nphase, namp, nvert);
+end
 
 if S.shuffle
-    spac = repmat(pac, [1 1 1 S.shuffle]);
+    if ncomponents>1
+        spac = repmat(pac, [1 1 1 1 S.shuffle]);
+    else
+        spac = repmat(pac, [1 1 1 S.shuffle]);
+    end
     sind = zeros(S.shuffle, ntrials);
     for s = 1:S.shuffle
-      sind(s, :) = randperm(ntrials);
+        sind(s, :) = randperm(ntrials);
     end
 end
 
 for f = 1:length(freqoi)
+    fprintf('%s of %s\n',num2str(freqoi(f)),num2str(freqoi(end)));
     
     spm_progress_bar('Init', ntrials, ...
         sprintf('Computing data spectra')); drawnow;
@@ -281,11 +317,12 @@ for f = 1:length(freqoi)
         Yh(: , : ,i) = spm_squeeze(ft_specest_hilbert(squeeze(Y(:,:, i)), times,...
             'freqoi', freqoi(f), 'width', width, 'filttype', 'but', ...
             'filtorder', 2,  'filtdir', 'twopass', 'verbose', 0), 2);
-        
         if ismember(i, Ibar)
             spm_progress_bar('Set', i); drawnow;
         end
     end
+    
+    Yh = Yh(:,round(D.fsample/6):end-round(D.fsample/6),:);  % remove start and end of each trial to avoid filter artefacts
     Yh = reshape(Yh, nchan, []);
     
     spm_progress_bar('Clear');
@@ -310,35 +347,80 @@ for f = 1:length(freqoi)
                 
                 for shuffle = 0:S.shuffle
                     if shuffle
-                        rYh = reshape(rYh, nsamples, ntrials);
-                        rYh = rYh(:, sind(shuffle, :));
-                        rYh = rYh(:)';
+                        nc=size(rYh,1);
+                        rYh = reshape(rYh, nc, nsamples-(2*round(D.fsample/6))+1, ntrials);
+                        rYh = rYh(:,:, sind(shuffle, :));
+                        rYh = reshape(rYh,nc,[]);
                     end
                     
                     switch ref_feature
                         case 'amplitude'
                             amp = abs(rYh);
-                            phase =  pi + angle(sYh);
+                            phase = mod(angle(sYh),2*pi);
                         case 'phase'
                             amp = abs(sYh);
-                            phase =  pi + angle(rYh);
+                            phase = mod(angle(rYh),2*pi);
                     end
                     
-                    cpac = abs(sum(amp.*exp(sqrt(-1)*phase))/(nsamples*ntrials));
-                    cpac = cpac./sqrt(amp*amp'/(nsamples*ntrials));
+                    if S.ncomp_amp==1 && S.ncomp_phase==1;
+                        amp(1,:)=amp(1,:)-mean(amp(1,:)); %(1,:) so it also works when keeping more components but computing PAC for just 1
+                        cpac = abs(sum(amp(1,:).*exp(sqrt(-1)*phase(1,:)))/(nsamples*ntrials));
+                        cpac = cpac*sqrt(2/var(amp(1,:)));
+                    end
+                    if S.ncomp_amp==1 && S.ncomp_phase>1;
+                        amp(1,:)=amp(1,:)-mean(amp(1,:));
+                        for kk=1:S.ncomp_phase
+                            cpac(kk) = abs(sum(amp(1,:).*exp(sqrt(-1)*phase(kk,:)))/(nsamples*ntrials));
+                            cpac(kk) = cpac(kk)*sqrt(2/var(amp(1,:)));
+                        end
+                    end
+                    if S.ncomp_amp>1 && S.ncomp_phase==1;
+                        for kk=1:S.ncomp_amp
+                            amp(kk,:)=amp(kk,:)-mean(amp(kk,:));
+                            cpac(kk) = abs(sum(amp(kk,:).*exp(sqrt(-1)*phase(1,:)))/(nsamples*ntrials));
+                            cpac(kk) = cpac(kk)*sqrt(2/var(amp(kk,:)));
+                        end
+                    end
+                    if S.ncomp_amp>1 && S.ncomp_phase>1;
+                        cnt=1;
+                        for k1=1:S.ncomp_amp
+                            for k2=1:S.ncomp_phase
+                                cpac(cnt) = abs(sum(amp(k1,:).*exp(sqrt(-1)*phase(k2,:)))/(nsamples*ntrials));
+                                cpac(cnt) = cpac(cnt)*sqrt(2/var(amp(k1,:)));
+                                cnt=cnt+1;
+                            end
+                        end
+                    end
+                    
                     
                     switch ref_feature
                         case 'amplitude'
                             if shuffle
-                                spac(f, j, i, shuffle) = cpac;
+                                if ncomponents>1;
+                                    spac(f, j, i, :, shuffle) = cpac;
+                                else
+                                    spac(f, j, i, shuffle) = cpac;
+                                end
                             else
-                                pac(f, j, i) = cpac;
+                                if ncomponents>1;
+                                    pac(f,j,i,:)=cpac;
+                                else
+                                    pac(f, j, i) = cpac;
+                                end
                             end
                         case 'phase'
                             if shuffle
-                                spac(j, f, i, shuffle) = cpac;
+                                if ncomponents>1;
+                                    spac(j, f, i, :, shuffle) = cpac;
+                                else
+                                    spac(j, f, i, shuffle) = cpac;
+                                end
                             else
-                                pac(j, f, i) = cpac;
+                                if ncomponents>1;
+                                    pac(j, f, i, :) = cpac;
+                                else
+                                    pac(j, f, i) = cpac;
+                                end
                             end
                     end
                 end
@@ -354,36 +436,57 @@ for f = 1:length(freqoi)
 end
 
 
-if max(nphase, namp)>1
-    image(1).val     = squeeze(sum(sum(pac, 2), 1));
-    image(1).label   = ['pac_total_'  spm_file(D.fname, 'basename')];
-    c = 2;
-else
-    c = 1;
-end
-
-for f = 1:nphase
-    for g = 1:namp
-        image(c).val     = squeeze(pac(f, g, :));
-        image(c).label   = ['pac_phase_' num2str(S.phasefreq(f)) 'Hz_amp_'...
-            num2str(S.ampfreq(g)) 'Hz_' spm_file(D.fname, 'basename')];
-        c = c+1;
-    end
-end
-
-for shuffle = 1:S.shuffle
+c = 1;
+for kk=1:ncomponents
+    
     if max(nphase, namp)>1
-        image(c).val     = squeeze(sum(sum(spac(:,:,:, shuffle), 2), 1));
-        image(c).label   = ['shuffled' num2str(shuffle) '_pac_total_'  spm_file(D.fname, 'basename')];
+        if ncomponents>1
+            image(c).val     = squeeze(sum(sum(pac(:,:,:,kk), 2), 1));
+            image(c).label   = ['pac_total_MEGcomponent' num2str(kk) '_' S.outputname spm_file(D.fname, 'basename')];
+        else
+            image(c).val     = squeeze(sum(sum(pac, 2), 1));
+            image(c).label   = ['pac_total_'  spm_file(D.fname, 'basename')];
+        end
         c = c+1;
     end
     
     for f = 1:nphase
         for g = 1:namp
-            image(c).val     = squeeze(spac(f, g, :, shuffle));
-            image(c).label   = ['shuffled' num2str(shuffle) '_pac_phase_' num2str(S.phasefreq(f)) 'Hz_amp_'...
-                num2str(S.ampfreq(g)) 'Hz_' spm_file(D.fname, 'basename')];
+            if ncomponents>1
+                image(c).val     = squeeze(pac(f, g, :,kk));
+                image(c).label   = ['pac_phase_' num2str(S.phasefreq(f)) 'Hz_amp_' num2str(S.ampfreq(g)) 'Hz_MEGcomponent' num2str(kk) '_' S.outputname spm_file(D.fname, 'basename')];
+            else
+                image(c).val     = squeeze(pac(f, g, :));
+                image(c).label   = ['pac_phase_' num2str(S.phasefreq(f)) 'Hz_amp_' num2str(S.ampfreq(g)) 'Hz_' S.outputname spm_file(D.fname, 'basename')];
+            end
             c = c+1;
+        end
+    end
+    
+    for shuffle = 1:S.shuffle
+        
+        if max(nphase, namp)>1
+            if ncomponents>1
+                image(c).val     = squeeze(sum(sum(spac(:,:,:,kk,shuffle), 2), 1));
+                image(c).label   = ['shuffled' num2str(shuffle) '_pac_total_MEGcomponent' num2str(kk) '_' spm_file(D.fname, 'basename')];
+            else
+                image(c).val     = squeeze(sum(sum(spac(:,:,:,shuffle), 2), 1));
+                image(c).label   = ['shuffled' num2str(shuffle) '_pac_total_'  spm_file(D.fname, 'basename')];
+            end
+            c = c+1;
+        end
+        
+        for f = 1:nphase
+            for g = 1:namp
+                if ncomponents>1
+                    image(c).val     = squeeze(spac(f, g, :, kk, shuffle));
+                    image(c).label   = ['shuffled' num2str(shuffle) '_pac_phase_' num2str(S.phasefreq(f)) 'Hz_amp_' num2str(S.ampfreq(g)) 'Hz_MEGcomponent' num2str(kk) '_' S.outputname spm_file(D.fname, 'basename')];
+                else
+                    image(c).val     = squeeze(spac(f, g, :, shuffle));
+                    image(c).label   = ['shuffled' num2str(shuffle) '_pac_phase_' num2str(S.phasefreq(f)) 'Hz_amp_' num2str(S.ampfreq(g)) 'Hz_' S.outputname spm_file(D.fname, 'basename')];
+                end
+                c = c+1;
+            end
         end
     end
 end
