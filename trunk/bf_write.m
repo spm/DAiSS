@@ -47,7 +47,7 @@ BF = bf_load('BF.mat', {'data', 'sources', 'features', 'output'});
 
 plugin_name   = cell2mat(fieldnames(job.plugin));
 
-outfield_name =  strtok('plugin_name', '_');
+outfield_name =  strtok(plugin_name, '_');
 
 BF.write.(outfield_name) = feval(['bf_write_' plugin_name], BF, job.plugin.(plugin_name));
 

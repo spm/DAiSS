@@ -110,10 +110,13 @@ for i = 1:nimages
     
     if S.visualise
         Fgraph  = spm_figure('GetWin', fname); figure(Fgraph); clf
+        a = axes;
         if S.visualise == 2
-            plot(spm_mesh_inflate(gifti([BF.data.D.fname '.surf.gii'])), gifti(fname));
+            H = spm_mesh_render('Disp', spm_mesh_inflate(gifti([BF.data.D.fname '.surf.gii'])), 'Parent', a);
+            spm_mesh_render('Overlay', H, gifti(fname));
         else
-            plot(gifti([BF.data.D.fname '.surf.gii']), gifti(fname));
+            H = spm_mesh_render('Disp',gifti([BF.data.D.fname '.surf.gii']), 'Parent', a);
+            spm_mesh_render('Overlay', H, gifti(fname));
         end
         colormap jet
     end
