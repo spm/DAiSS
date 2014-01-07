@@ -113,12 +113,12 @@ for i = 1:nimages
         a = axes;
         if S.visualise == 2
             H = spm_mesh_render('Disp', spm_mesh_inflate(gifti([BF.data.D.fname '.surf.gii'])), 'Parent', a);
-            spm_mesh_render('Overlay', H, gifti(fname));
+            H = spm_mesh_render('Overlay', H, gifti(fname));
         else
             H = spm_mesh_render('Disp',gifti([BF.data.D.fname '.surf.gii']), 'Parent', a);
-            spm_mesh_render('Overlay', H, gifti(fname));
+            H = spm_mesh_render('Overlay', H, gifti(fname));
         end
-        colormap jet
+         spm_mesh_render('Colormap', H, jet(256));
     end
     
     if ismember(i, Ibar)
