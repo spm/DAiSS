@@ -155,6 +155,7 @@ if usemontage
     S1 = [];
     S1.montage = montage;
     S1.prefix  = S.prefix; % ignored for online
+    S1.keepsensors = false;
         
     switch S.mode
         case 'write'                                              
