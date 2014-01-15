@@ -6,7 +6,7 @@ function bf_save(BF, overwrite)
 % $Id$
 
 if nargin == 1 && exist(fullfile(pwd, 'BF.mat'), 'file')
-    save('BF.mat', '-struct', 'BF', '-append', '-v7.3');
+    save('BF.mat', '-struct', 'BF', '-append');
 else
     save('BF.mat', '-struct', 'BF', '-v7.3');
 end
