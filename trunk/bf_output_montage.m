@@ -6,15 +6,43 @@ function mont = bf_output_montage(BF, S)
 % $Id$
 
 %--------------------------------------------------------------------------
-if nargin == 0    
-    woi      = cfg_entry;
-    woi.tag  = 'woi';
-    woi.name = 'Time window of interest';
-    woi.strtype = 'r';
-    woi.num = [Inf 2];
-    woi.val = {[-Inf Inf]};
-    woi.help = {'Time window to optimise PCA (only used for VOI)'};
+if nargin == 0      
+    label = cfg_entry;
+    label.tag = 'label';
+    label.name = 'Label';
+    label.strtype = 's';
+    label.help = {'Label for the VOI'};
     
+    pos = cfg_entry;
+    pos.tag = 'pos';
+    pos.name = 'MNI coordinates'; 
+    pos.strtype = 'r';
+    pos.num = [1 3];
+    pos.help = {'Locations for the VOI in MNI coordinates'};
+    pos.val = {};         
+        
+    radius = cfg_entry;
+    radius.tag = 'radius';
+    radius.name = 'Radius';
+    radius.strtype = 'r';
+    radius.num = [1 1];
+    radius.val = {0};
+    radius.help = {'Radius (in mm) for the VOIs (leave 0 for single point)'};    
+    
+    voidef = cfg_branch;
+    voidef.tag = 'voidef';
+    voidef.name = 'VOI';
+    voidef.val = {label, pos, radius};
+    
+    vois = cfg_repeat;
+    vois.tag = 'vois';
+    vois.name = 'Redefine VOIs';
+    vois.num  = [0 Inf];
+    vois.values = {voidef};
+    vois.val  = {}; 
+    vois.help = {'This makes it possible to define new VOIs when the original source space was mesh or grid.',...
+        'Only the sources present in the original source space can be used at this stage'}; 
+   
     method = cfg_menu;
     method.tag = 'method';
     method.name = 'Summary method';
@@ -26,7 +54,7 @@ if nargin == 0
     mont = cfg_branch;
     mont.tag = 'montage';
     mont.name = 'Source montage';
-    mont.val  = {woi, method};    
+    mont.val  = {method, vois};    
     return
 elseif nargin < 2
     error('Two input arguments are required');
@@ -44,11 +72,33 @@ for m  = 1:numel(modalities)
     if isfield(BF.inverse.(modalities{m}), 'label')
          montage.labelnew = BF.inverse.(modalities{m}).label(:);
          montage.tra = cat(1, BF.inverse.(modalities{m}).W{:});
-    elseif isfield(BF.sources, 'voi')
-        montage.labelnew = BF.sources.voi.label;
+    elseif isfield(BF.sources, 'voi') || numel(S.voidef)>0
+        if isfield(BF.sources, 'voi')
+            montage.labelnew = BF.sources.voi.label;
+        else
+            montage.labelnew = {S.voidef.label}; 
+            mnipos = spm_eeg_inv_transform_points(BF.data.transforms.toMNI,  BF.sources.pos);
+        end
         lbl = {};
         for v = 1:numel(montage.labelnew)
-            ind = find(BF.sources.voi.pos2voi == v);
+            if isfield(BF.sources, 'voi')
+                ind = find(BF.sources.voi.pos2voi == v);
+            else
+                dist = sqrt(sum((mnipos-repmat(S.voidef(v).pos, size(mnipos, 1), 1)).^2, 2));
+                if S.voidef(v).radius>0
+                    ind = find(dist<S.voidef(v).radius);
+                else
+                    [minval ind] = min(dist);
+                    if minval>20 % if there is nothing within 2cm something must be wrong
+                        ind = [];
+                    end
+                end
+                
+                if isempty(ind)
+                    error(['No sources were found close enough for VOI ' S.voidef(v).label]);
+                end
+            end
+            
             W   = cat(1, BF.inverse.(modalities{m}).W{ind});
             
             switch S.method
@@ -74,7 +124,7 @@ for m  = 1:numel(modalities)
         
         if ~isempty(lbl)
             montage.labelnew = lbl;
-        end 
+        end         
     else
         mnipos = spm_eeg_inv_transform_points(BF.data.transforms.toMNI, BF.sources.pos);
         for i = 1:size(mnipos, 1)
