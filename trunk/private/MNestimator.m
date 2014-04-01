@@ -1,4 +1,4 @@
-function [Linv,W]=MNestimator(L,C,SNR2,trunc, W)
+function [Linv,W]=MNestimator(L,C,SNR2,trunc)
 % function [Linv,W]=MNestimator(L,C,SNR2,trunc)
 % This function makes a basic minimum-morm pseudoinverse operator = MN estimator.
 % - L: the forward solution, lead-field matrix
@@ -34,9 +34,7 @@ if isempty(C)
     C=eye(Nsens);
 end
 
-if nargin < 5 || isempty(W)
-    W=MakeWhitener(C,trunc);
-end
+W=MakeWhitener(C,trunc);
 
 LW=W*L;
 lambda2=trace(LW*LW')/(Nsens*SNR2);

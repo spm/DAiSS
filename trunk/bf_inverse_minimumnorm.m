@@ -58,23 +58,33 @@ W = cell(size(L));
 
 nvert = numel(W);
 
-Wh = [];
+nori  = size(L{1}, 2);
+
+LL = [];
 
 spm('Pointer', 'Watch');drawnow;
-spm_progress_bar('Init', nvert, ['Computing ' S.modality ' filters']); drawnow;
+spm_progress_bar('Init', nvert, ['Preparing ' S.modality ' leadfields']); drawnow;
 if nvert > 100, Ibar = floor(linspace(1, nvert,100));
 else Ibar = 1:nvert; end
 
 for i = 1:nvert
-    if ~isnan(L{i})
-        lf    = U'*L{i};
-                
-        % construct the spatial filter
-        [W{i}, Wh] = MNestimator(lf,C, S.snr,S.trunc, Wh);
-
-    else
-        W{i} = NaN;
+    lf = U'*L{i};     
+    
+    LL = cat(2, LL, lf);
+    
+    if ismember(i, Ibar)
+        spm_progress_bar('Set', i); drawnow;
     end
+end
+
+WW = MNestimator(LL,C, S.snr,S.trunc);
+
+spm_progress_bar('Init', nvert, ['Preparing ' S.modality ' filters']); drawnow;
+if nvert > 100, Ibar = floor(linspace(1, nvert,100));
+else Ibar = 1:nvert; end
+
+for i = 1:nvert
+    W{i} = WW(((i-1)*nori+1):(i*nori), :); 
     
     if ismember(i, Ibar)
         spm_progress_bar('Set', i); drawnow;
