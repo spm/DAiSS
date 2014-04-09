@@ -146,7 +146,7 @@ for i = 1:nimages
             pow = source.pow;
             source.pow = nan(size(source.pos, 1), 1);
             source.pow(source.inside) = pow;
-            sourceint = ft_sourceinterpolate(cfg, source, ft_read_mri(sMRI, 'format', 'nifti_spm'));
+            sourceint = ft_sourceinterpolate(cfg, source, ft_read_mri(sMRI, 'dataformat', 'nifti_spm'));
             Y = sourceint.pow;
         case 'mesh'
             Y = spm_mesh_to_grid(source, outvol, source.pow);
@@ -155,7 +155,7 @@ for i = 1:nimages
         case 'voi'
             cfg.interpmethod = 'sphere_avg';
             cfg.sphereradius = 5;
-            sourceint = ft_sourceinterpolate(cfg, source, ft_read_mri(sMRI, 'format', 'nifti_spm'));
+            sourceint = ft_sourceinterpolate(cfg, source, ft_read_mri(sMRI, 'dataformat', 'nifti_spm'));
             Y = sourceint.pow;
             Y = reshape(Y, sourceint.dim);
     end
