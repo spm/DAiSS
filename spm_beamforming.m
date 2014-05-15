@@ -18,7 +18,7 @@ end
 str = sprintf('%s|', pipelines{:, 1});
 str = str(1:(end-1));
 
-fun = spm_input('Beamforming',1,'m', str, char(pipelines(:, 2)));
+fun = spm_input('DAiSS',1,'m', str, char(pipelines(:, 2)));
   
 eval(fun);
 
