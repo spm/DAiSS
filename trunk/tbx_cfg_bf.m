@@ -23,8 +23,8 @@ components = {
 
 bf = cfg_choice;
 bf.tag = 'beamforming';
-bf.name = 'Beamforming';
-bf.help = {'Beamforming toolbox'};
+bf.name = 'DAiSS (beamforming)';
+bf.help = {'Data analysis in source space toolbox'};
 
 for i = 1:numel(components)
   bf.values{i} = feval(components{i});
