@@ -155,14 +155,37 @@ D = BF.data.D;
 if isfield(S.isdesign,'custom'),
     %% gui specified conditions and contrast
         
-    woi = S.isdesign.custom.woi;
-    woiind=D.indsample(woi/1000);
-    woi=D.time(woiind); %% in seconds
-    
+         
+    woitmp = S.isdesign.custom.woi;
+   
+    % DP - The indsample function does not work for matrices, so I have
+    % looped through. Otherwise, we are left with only one windows of
+    % interest.
+    for wi = 1:size(woitmp,1)
+        woiind(wi,:)=D.indsample(woitmp(wi,:)/1000);
+        woi(wi,:)=D.time(woiind(wi,:)); %% in seconds
+    end
+   
     duration=unique(woiind(:,2)-woiind(:,1))./D.fsample; %% in sec
     if numel(duration)>1,
         error('both windows need to be the same length');
     end;
+   
+    % DP - this can result in a tiny bit of residual, presumably due to
+    % numerical imprecision. Not sure. Doesn't seem necessary anyway since
+    % the number of samples is equal.
+%     duration=unique(woi(:,2)-woi(:,1));
+%     if numel(duration)>1,
+%         error('both windows need to be the same length');
+%     end;
+%     woi = S.isdesign.custom.woi;
+%     woiind=D.indsample(woi/1000);
+%     woi=D.time(woiind); %% in seconds
+    
+%     duration=unique(woiind(:,2)-woiind(:,1))./D.fsample; %% in sec
+%     if numel(duration)>1,
+%         error('both windows need to be the same length');
+%     end;
     
     duration=unique(woi(:,2)-woi(:,1));
     if numel(duration)>1,
