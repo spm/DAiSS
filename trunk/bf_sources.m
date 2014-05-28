@@ -71,12 +71,14 @@ BF = bf_load('BF.mat');
 
 plugin_name = cell2mat(fieldnames(job.plugin));
 
-BF.sources = [];
-BF.sources.(plugin_name) = feval(['bf_sources_' plugin_name], BF, job.plugin.(plugin_name));
-BF.sources.pos = BF.sources.(plugin_name).pos;
+field_name  = strtok(plugin_name, '_');
 
-if isfield(BF.sources.(plugin_name), 'ori')
-    BF.sources.ori = BF.sources.(plugin_name).ori;
+BF.sources = [];
+BF.sources.(field_name) = feval(['bf_sources_' plugin_name], BF, job.plugin.(plugin_name));
+BF.sources.pos = BF.sources.(field_name).pos;
+
+if isfield(BF.sources.(field_name), 'ori')
+    BF.sources.ori = BF.sources.(field_name).ori;
 else
     BF.sources.ori = [];
 end
