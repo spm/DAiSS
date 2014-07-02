@@ -136,8 +136,8 @@ for m  = 1:numel(modalities)
         end
     end
     
-%     montage.chantypenew = repmat({'LFP'}, length(montage.labelnew), 1);
-%     montage.chanunitnew = repmat({'nA*m'}, length(montage.labelnew), 1);
+    montage.chantypenew = repmat({'LFP'}, length(montage.labelnew), 1);
+    montage.chanunitnew = repmat({'nA*m'}, length(montage.labelnew), 1);
     
     mont.(modalities{m}) = montage;
 end

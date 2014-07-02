@@ -237,7 +237,7 @@ for c = 1:size(Cy, 1)
             w    = W{i};
             
             for j = 1:numel(Cy(c, :))
-                p = w*Cy{c, j}*w';
+                p = real(w*Cy{c, j}*w');
                 if isscalar(p) || isequal(S.powermethod, 'trace')
                     cpow(j) = trace(p);
                     
