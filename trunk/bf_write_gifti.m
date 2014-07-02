@@ -66,11 +66,11 @@ switch S.normalise
     case  'separate'
         for i = 1:numel(BF.output.image)
             val = BF.output.image(i).val;
-            scale(i) = 1./mean(val(~isnan(val)));
+            scale(i) = 1./mean(abs(val(~isnan(val))));
         end
     case  'all'
         val = spm_vec({BF.output.image(:).val});
-        scale = scale./mean(val(~isnan(val)));
+        scale = scale./mean(abs(val(~isnan(val))));
 end
 
 switch S.space
