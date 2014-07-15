@@ -5,7 +5,7 @@ function voi = bf_sources_voi(BF, S)
 % $Id$
 
 %--------------------------------------------------------------------------
-if nargin == 0 
+if nargin == 0
     label = cfg_entry;
     label.tag = 'label';
     label.name = 'Label';
@@ -14,12 +14,12 @@ if nargin == 0
     
     pos = cfg_entry;
     pos.tag = 'pos';
-    pos.name = 'MNI coordinates'; 
+    pos.name = 'MNI coordinates';
     pos.strtype = 'r';
     pos.num = [1 3];
     pos.help = {'Locations for the VOI in MNI coordinates'};
-    pos.val = {};  
-            
+    pos.val = {};
+    
     ori = cfg_entry;
     ori.tag = 'ori';
     ori.name = 'Orientation';
@@ -33,11 +33,24 @@ if nargin == 0
     voidef.name = 'VOI';
     voidef.val = {label, pos, ori};
     
+    mask = cfg_files;
+    mask.tag = 'mask';
+    mask.name = 'MNI mask';
+    mask.filter = 'image';
+    mask.ufilter = '.*';
+    mask.num     = [1 1];
+    mask.help = {'Select a mask image'};
+    
+    maskdef = cfg_branch;
+    maskdef.tag = 'maskdef';
+    maskdef.name = 'Mask VOI';
+    maskdef.val  = {label, mask};
+    
     vois = cfg_repeat;
     vois.tag = 'vois';
     vois.name = 'VOIs';
     vois.num  = [1 Inf];
-    vois.values = {voidef};
+    vois.values = {voidef, maskdef};
     vois.val = {voidef};
     
     radius = cfg_entry;
@@ -70,9 +83,6 @@ end
 % beamforming
 M = inv(BF.data.transforms.toMNI);
 
-nvoi = numel(S.voidef);
-voi = [];
-voi.label = {S.voidef(:).label}';
 if S.radius > 0
     vec = -S.radius:S.resolution:S.radius;
     [X, Y, Z]  = ndgrid(vec, vec, vec);
@@ -82,17 +92,42 @@ if S.radius > 0
 else
     sphere = 0;
     npnt = 1;
-    ori = cat(1, S.voidef(:).ori);
-    if any(any(ori))
-        voi.ori = ori;
+end
+
+grid = bf_sources_grid(BF, struct('resolution', S.resolution, 'space', 'MNI template'));
+mnigrid = ft_transform_geometry(BF.data.transforms.toMNI, grid);
+
+nvoi = numel(S.vois);
+voi = [];
+voi.label = {};
+voi.pos = [];
+voi.ori = [];
+voi.pos2voi = [];
+
+for i = 1:nvoi
+    switch char(fieldnames(S.vois{i}))
+        case 'voidef'
+            voi.label{i} = S.vois{i}.voidef.label;
+            voi.pos = [voi.pos; sphere+repmat(S.vois{i}.voidef.pos, npnt, 1)];
+            ori     = [ori; S.vois{i}.voidef.ori];
+            voi.pos2voi  = [voi.pos2voi i*ones(1, npnt)];
+        case 'maskdef'
+            voi.label{i} = S.vois{i}.maskdef.label;
+            V   = spm_vol(char(S.vois{i}.maskdef.mask));
+            
+            vox = spm_eeg_inv_transform_points(inv(V.mat), mnigrid.pos);
+            Y   = spm_sample_vol(V, vox(:, 1),  vox(:, 2), vox(:, 3), 0);
+            ind = find(~isnan(Y) & abs(Y)>0);
+            voi.pos = [voi.pos; grid.pos(ind, :)];
+            voi.ori = [voi.ori;zeros(length(ind), 3)];
+            voi.pos2voi  = [voi.pos2voi i*ones(1, length(ind))];
     end
 end
 
-voi.pos = [];
-voi.pos2voi = [];
-for s = 1:nvoi
-    voi.pos = [voi.pos; sphere+repmat(S.voidef(s).pos, npnt, 1)];
-    voi.pos2voi = [voi.pos2voi s*ones(1, npnt)];
+voi.label = voi.label(:);
+
+if any(any(ori))
+    voi.ori = ori;
 end
 
 voi = ft_transform_geometry(M, voi);
