@@ -97,9 +97,15 @@ if isfield(BF.output, 'montage')
         montage.labelorg = [montage.labelorg(:); addchannels(:)];
         montage.labelnew = [montage.labelnew(:); addchannels(:)];
         
+        montage.chantypenew = [montage.chantypenew(:); chantype(D, D.indchannel(addchannels))'];
+        montage.chanunitnew = [montage.chanunitnew(:); units(D, D.indchannel(addchannels))'];
+        
         na = numel(addchannels);
         montage.tra((end+1):(end+na), (end+1):(end+na)) = eye(na);
     end
+    
+    montage.chantypeorg = chantype(D, D.indchannel(montage.labelorg))';
+    montage.chanunitorg = units(D, D.indchannel(montage.labelorg))';
 elseif isfield(BF.output, 'sourcedata')
     ftdata = BF.output.sourcedata.(S.modality).ftdata;
     

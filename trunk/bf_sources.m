@@ -163,7 +163,7 @@ for m = 1:numel(modalities)
                 L{i}  = ft_compute_leadfield(BF.sources.pos(i, :), sens, vol, 'reducerank', reduce_rank(m));
             end
             
-            if ~isempty(BF.sources.ori)
+            if ~isempty(BF.sources.ori) && any(BF.sources.ori(i, :))               
                 L{i}  = L{i}*BF.sources.ori(i, :)';
             elseif ~job.keep3d &&  reduce_rank(m) < 3
                  [U_, S_, V] = svd(L{i}, 'econ');
