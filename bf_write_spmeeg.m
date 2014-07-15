@@ -158,6 +158,11 @@ else
 end
 
 if usemontage
+    if D.montage('getindex')
+        vmontage = rmfield(D.montage('getmontage'), 'channels');
+        montage  =  ft_apply_montage(vmontage, montage);
+    end
+    
     S1 = [];
     S1.montage = montage;
     S1.prefix  = S.prefix; % ignored for online
