@@ -36,7 +36,7 @@ elseif nargin < 2
 end
 
 iskull = export(gifti(BF.data.mesh.tess_iskull), 'ft');
-
+iskull = export(gifti('C:\spm12\canonical\iskull_2562.surf.gii'), 'ft');
 M1 = BF.data.transforms.toNative;
 
 switch S.space

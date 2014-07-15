@@ -101,7 +101,7 @@ nvoi = numel(S.vois);
 voi = [];
 voi.label = {};
 voi.pos = [];
-voi.ori = [];
+ori = [];
 voi.pos2voi = [];
 
 for i = 1:nvoi
@@ -118,8 +118,8 @@ for i = 1:nvoi
             vox = spm_eeg_inv_transform_points(inv(V.mat), mnigrid.pos);
             Y   = spm_sample_vol(V, vox(:, 1),  vox(:, 2), vox(:, 3), 0);
             ind = find(~isnan(Y) & abs(Y)>0);
-            voi.pos = [voi.pos; grid.pos(ind, :)];
-            voi.ori = [voi.ori;zeros(length(ind), 3)];
+            voi.pos = [voi.pos; mnigrid.pos(ind, :)];
+            ori = [ori;zeros(length(ind), 3)];
             voi.pos2voi  = [voi.pos2voi i*ones(1, length(ind))];
     end
 end
