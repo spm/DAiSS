@@ -122,7 +122,7 @@ outdir = spm_file(job.BF{1}, 'fpath');
 
 cd(outdir);
 
-BF = bf_load('BF.mat', {'data'});
+BF = bf_load('BF.mat', {'data', 'sources'});
 D  = BF.data.D;
 
 
@@ -181,6 +181,7 @@ for m = 1:numel(modalities)
     BF.features.(modality_name) = feval(['bf_features_' plugin_name], BF, S);
     
     S1.modality = modality_name;
+    S1.chanind  = chanind;
     
     BF.features.(modality_name) = feval(['bf_regularise_' reg_name], BF, S1);
     
