@@ -71,7 +71,7 @@ for m  = 1:numel(modalities)
     montage.tra      = [];
     if isfield(BF.inverse.(modalities{m}), 'label')
          montage.labelnew = BF.inverse.(modalities{m}).label(:);
-         montage.tra = cat(1, BF.inverse.(modalities{m}).W{:});
+         montage.tra = cat(1, BF.inverse.(modalities{m}).W{:})*U';
     elseif isfield(BF.sources, 'voi') || numel(S.voidef)>0
         if isfield(BF.sources, 'voi')
             montage.labelnew = BF.sources.voi.label;
