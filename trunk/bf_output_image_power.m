@@ -49,6 +49,14 @@ if nargin == 0
     woi.val = {[-Inf Inf]};
     woi.help = {'Time windows (in ms)'};
     
+    foi = cfg_entry;
+    foi.tag = 'foi';
+    foi.name = 'Frequency bands of interest';
+    foi.strtype = 'r';
+    foi.num = [Inf 2];
+    foi.val = {[0 Inf]};
+    foi.help = {'Frequency windows within which to compute covariance over (sec)'};
+    
     contrast = cfg_entry;
     contrast.tag = 'contrast';
     contrast.name = 'Time contrast';
@@ -107,7 +115,7 @@ if nargin == 0
     image_power      = cfg_branch;
     image_power.tag  = 'image_power';
     image_power.name = 'Power image';
-    image_power.val  = {whatconditions, sametrials, woi, contrast, result, scale, powermethod, modality};
+    image_power.val  = {whatconditions, sametrials, woi, foi, contrast, result, scale, powermethod, modality};
     
     res = image_power;
     
@@ -124,6 +132,34 @@ samples = {};
 for i = 1:size(S.woi, 1)
     samples{i} = D.indsample(S.woi(i, 1)):D.indsample(S.woi(i, 2));
 end
+
+nsamples = unique(cellfun(@length, samples));
+
+if length(nsamples)~=1,
+    error('all windows must be of equal length');
+end
+
+windowduration  = nsamples/D.fsample;
+
+dctfreq         = (0:nsamples-1)/2/windowduration;   % DCT frequencies (Hz)
+dctT            = spm_dctmtx(nsamples,nsamples);
+
+nbands = size(S.foi, 1);
+allfreqind=[];
+
+for fband = 1:nbands, %% allows one to break up spectrum and ignore some frequencies
+    
+    freqrange  = S.foi(fband,:);
+    
+    j          = find( (dctfreq >= freqrange(1)) & (dctfreq<=freqrange(2)));
+  
+    allfreqind = [allfreqind j];
+    
+end % for fband=1:Nbands
+
+allfreqind = sort(unique(allfreqind));
+
+Tband = dctT(:, allfreqind); % filter to this band
 
 if isfield(S.whatconditions, 'all')
     S.whatconditions.condlabel = D.condlist;
@@ -170,8 +206,11 @@ N     = 0;
 for i = 1:ntrials
     for j = 1:numel(samples)
         Y  = U'*squeeze(D(channels, samples{j}, alltrials(i)));
-        Y  = detrend(Y', 'constant');
-        YY{i, j} = Y'*Y;
+        Y  = detrend(Y', 'constant')';
+        
+        Y = Y*Tband;
+        
+        YY{i, j} = Y*Y';
         sumYY = sumYY+YY{i,j};
         N  = N+length(samples{j});
     end
