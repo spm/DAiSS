@@ -281,59 +281,68 @@ end
 
 %%%%%%%%%%%%
 
-if strmatch(ref_feature,'amplitude');
+try S.reference.refchan;
     
-    for j = 1:numel(refsig)
-        amplitude(j,:)=abs(refsig{j});
-        AMPLITUDE(j,:)=((amplitude(j,:)-mean(amplitude(j,:)))./std(amplitude(j,:)))';
-    end
-    
-    amplitude=reshape(amplitude,numel(refsig),nsamples-(2*round(D.fsample/6))+1, ntrials);
-    
-    for j = 1:numel(refsig)
-        for k= 1:ntrials
-            amplitude(j,:,k)=((amplitude(j,:,k)-mean(amplitude(j,:,k)))./std(amplitude(j,:,k)))';
-        end
-    end
-    
-elseif strmatch(ref_feature,'phase');
-    
-    for j = 1:numel(refsig)
-        phase(j,:)=mod(angle(refsig{j}),2*pi);
-        PHASE(j,:)=phase(j,:);
-    end
-    
-    phase = reshape(phase,numel(refsig),nsamples-(2*round(D.fsample/6))+1, ntrials);  % remove start and end of each trial to avoid filter artefacts
-    
-    COS(j,:)=((cos(PHASE(j,:))-mean(cos(PHASE(j,:))))./std(cos(PHASE(j,:))))';
-    SIN(j,:)=((sin(PHASE(j,:))-mean(sin(PHASE(j,:))))./std(sin(PHASE(j,:))))';
-    
-    Refsig = cell(1, length(freqoi));
-    for j = 1:length(freqoi)
-        Refsig{j} = zeros(size(Yr, 1), nsamples-(2*round(D.fsample/6))+1, ntrials);
-    end
-    
-    for i = 1:ntrials
-        spectrum = ft_specest_hilbert(squeeze(Yr(:,:, i)), times,...
-            'freqoi', freqoi, 'width', lowamp_width, 'filttype', 'but', 'filtorder', 2,...
-            'filtdir', 'twopass', 'verbose', 0);
+    if strmatch(ref_feature,'amplitude');
         
-        for j = 1:length(freqoi)
-            tmp = spm_squeeze(spectrum(:, j, :), 2);
-            Refsig{j}(:,:,i) = tmp(:,round(D.fsample/6):end-round(D.fsample/6)); %to remove edge artefacts
+        for j = 1:size(refsig{1},1)%1:numel(refsig)
+            amplitude(j,:)=abs(refsig{j});
+            AMPLITUDE(j,:)=((amplitude(j,:)-mean(amplitude(j,:)))./std(amplitude(j,:)))';
         end
+        
+        amplitude=reshape(amplitude,numel(refsig),nsamples-(2*round(D.fsample/6))+1, ntrials);
+        
+        for j = 1:size(refsig{1},1)% 1:numel(refsig)
+            for k= 1:ntrials
+                amplitude(j,:,k)=((amplitude(j,:,k)-mean(amplitude(j,:,k)))./std(amplitude(j,:,k)))';
+            end
+        end
+        
+                 
+    elseif strmatch(ref_feature,'phase');
+        
+        for j = 1:numel(refsig)
+            phase(j,:)=mod(angle(refsig{j}),2*pi);
+            PHASE(j,:)=phase(j,:);
+        end
+        
+        phase = reshape(phase,numel(refsig),nsamples-(2*round(D.fsample/6))+1, ntrials);  % remove start and end of each trial to avoid filter artefacts
+        
+        COS(j,:)=((cos(PHASE(j,:))-mean(cos(PHASE(j,:))))./std(cos(PHASE(j,:))))';
+        SIN(j,:)=((sin(PHASE(j,:))-mean(sin(PHASE(j,:))))./std(sin(PHASE(j,:))))';
+        
+        Refsig = cell(1, length(freqoi));
+        for j = 1:length(freqoi)
+            Refsig{j} = zeros(size(Yr, 1), nsamples-(2*round(D.fsample/6))+1, ntrials);
+        end
+        
+        for i = 1:ntrials
+            spectrum = ft_specest_hilbert(squeeze(Yr(:,:, i)), times,...
+                'freqoi', freqoi, 'width', lowamp_width, 'filttype', 'but', 'filtorder', 2,...
+                'filtdir', 'twopass', 'verbose', 0);
+            
+            for j = 1:length(freqoi)
+                tmp = spm_squeeze(spectrum(:, j, :), 2);
+                Refsig{j}(:,:,i) = tmp(:,round(D.fsample/6):end-round(D.fsample/6)); %to remove edge artefacts
+            end
+        end
+        
+        for j = 1:numel(Refsig)
+            Refsig{j} = reshape(Refsig{j}, size(Refsig{j}, 1), []);
+            lowamp(j,:) = abs(Refsig{j});
+            LOWAMP(j,:) = ((lowamp(j,:)-mean(lowamp(j,:)))./std(lowamp(j,:)))';
+        end
+        
+        lowamp = reshape(lowamp,numel(refsig),nsamples-(2*round(D.fsample/6))+1, ntrials);
+        
     end
     
-    for j = 1:numel(Refsig)
-        Refsig{j} = reshape(Refsig{j}, size(Refsig{j}, 1), []);
-        lowamp(j,:) = abs(Refsig{j});
-        LOWAMP(j,:) = ((lowamp(j,:)-mean(lowamp(j,:)))./std(lowamp(j,:)))';
-    end
-    
-    lowamp = reshape(lowamp,numel(refsig),nsamples-(2*round(D.fsample/6))+1, ntrials);
+    J=numel(refsig);
     
 end
 
+
+keyboard
 %%%%%%%%%%%%
 
 switch ref_feature
@@ -371,6 +380,78 @@ for i = 1:nvert
         
         source=w*reshape(Y, nchan, []);
         source=reshape(source,nsamples,ntrials);
+        
+        try S.reference.within;
+            
+            if strmatch(ref_feature,'phase')
+                
+                Foi=S.phasefreq;
+                
+                for j=1:length(Foi)
+                    
+                    Yh = 0*source;
+                    for i1 = 1:ntrials
+                        Yh(: ,i1) = spm_squeeze(ft_specest_hilbert(source(:, i1)', times,...
+                            'freqoi', Foi(j), 'width', S.phaseres, 'filttype', 'but', ...
+                            'filtorder', 2,  'filtdir', 'twopass', 'verbose', 0), 2);
+                        if ismember(i1, Ibar)
+                            spm_progress_bar('Set', i1); drawnow;
+                        end
+                    end
+                    
+                    phase_tmp = mod(angle(Yh),2*pi);
+                    phase(j,:,:) = phase_tmp(round(fsample/6):end-round(fsample/6),:);  % remove start and end of each trial to avoid filter artefacts
+                    PHASE(j,:) = reshape(phase(j,:,:),1,[]);
+                    
+                    Ya = 0*source;
+                    for i2 = 1:ntrials
+                        Ya(: ,i2) = spm_squeeze(ft_specest_hilbert(source(:, i2)', times,...
+                            'freqoi', Foi(j), 'width', S.lowampres, 'filttype', 'but', ...
+                            'filtorder', 2,  'filtdir', 'twopass', 'verbose', 0), 2);
+                        if ismember(i2, Ibar)
+                            spm_progress_bar('Set', i2); drawnow;
+                        end
+                    end
+                    
+                    lowamp_tmp = abs(Ya);
+                    lowamp(j,:,:) = lowamp_tmp(round(fsample/6):end-round(fsample/6),:);  % remove start and end of each trial to avoid filter artefacts
+                    LOWAMP(j,:) = reshape(lowamp(j,:,:),1,[]);
+                    LOWAMP(j,:) = ((LOWAMP(j,:)-mean(LOWAMP(j,:)))./std(LOWAMP(j,:)))';
+                    COS(j,:)=((cos(PHASE(j,:))-mean(cos(PHASE(j,:))))./std(cos(PHASE(j,:))))';
+                    SIN(j,:)=((sin(PHASE(j,:))-mean(sin(PHASE(j,:))))./std(sin(PHASE(j,:))))';
+                    
+                    J=j;
+                end
+                
+            elseif strmatch(ref_feature,'amplitude')
+                
+                Foi=S.ampfreq;
+                
+                for j=1:length(Foi)
+                    
+                    Yh = 0*source;
+                    for i1 = 1:ntrials
+                        Yh(: ,i1) = spm_squeeze(ft_specest_hilbert(source(:, i1)', times,...
+                            'freqoi', Foi(j), 'width', S.ampres, 'filttype', 'but', ...
+                            'filtorder', 2,  'filtdir', 'twopass', 'verbose', 0), 2);
+                        if ismember(i1, Ibar)
+                            spm_progress_bar('Set', i1); drawnow;
+                        end
+                    end
+                    
+                    amplitude_tmp=abs(Yh);
+                    amplitude(j,:,:)=amplitude_tmp(round(fsample/6):end-round(fsample/6),:);  % remove start and end of each trial to avoid filter artefacts
+                    AMPLITUDE(j,:)=reshape(amplitude(j,:,:),1,[]);
+                    AMPLITUDE(j,:)=((AMPLITUDE(j,:)-mean(AMPLITUDE(j,:)))./std(AMPLITUDE(j,:)))';
+                    
+                    for k=1:ntrials
+                        amplitude(j,:,k)=((amplitude(j,:,k)-mean(amplitude(j,:,k)))./std(amplitude(j,:,k)))';
+                    end
+                end
+                J=j;
+            end
+            
+        end
         
         
         for f = 1:length(freqoi)
@@ -422,7 +503,7 @@ for i = 1:nvert
                 
             end
             
-            for j = 1:numel(refsig)
+            for j = 1:J
                 
                 V=[];
                 c=[1;1;1];
@@ -435,22 +516,9 @@ for i = 1:nvert
                         Xk=[(cos(squeeze(phase(j,:,k)))-mean(cos(squeeze(phase(j,:,k)))))./std(cos(squeeze(phase(j,:,k))));(sin(squeeze(phase(j,:,k)))-mean(sin(squeeze(phase(j,:,k)))))./std(sin(squeeze(phase(j,:,k))));(squeeze(lowamp(j,:,k))-mean(squeeze(lowamp(j,:,k))))./std(squeeze(lowamp(j,:,k)))]';
                         yk=squeeze(amplitude(:,k));
                     end
-                                        
+                    
                     %%glm
-                    [T,df,Beta(f,j,i,:,k)]=spm_ancova(Xk,V,yk,c); %to get betas
-                    
-                    SSyb(k)=sum((yk-mean(yk)).^2);
-                    residuals=yk-(Beta(f,j,i,1,k).*Xk(:,1)+Beta(f,j,i,2,k).*Xk(:,2));
-                    SSe(k)=sum((residuals-mean(residuals)).^2);
-                    r_GLM(f,j,i,k)=real(sqrt((SSyb(k)-SSe(k))/SSyb(k)));
-                    
-                    residuals_amp=yk-(Beta(f,j,i,3,k).*Xk(:,3));
-                    SSe_amp(k)=sum((residuals_amp-mean(residuals_amp)).^2);
-                    r_GLM_amp(f,j,i,k)=real(sqrt((SSyb(k)-SSe_amp(k))/SSyb(k)));
-                    
-                    residuals_total=yk-(Beta(f,j,i,1,k).*Xk(:,1)+Beta(f,j,i,2,k).*Xk(:,2)+Beta(f,j,i,3,k).*Xk(:,3));
-                    SSe_total(k)=sum((residuals_total-mean(residuals_total)).^2);
-                    r_GLM_total(f,j,i,k)=real(sqrt((SSyb(k)-SSe_total(k))/SSyb(k)));
+                    Beta(f,j,i,:,k)=(yk'*pinv(Xk'))';
                     
                 end %ntrials
                 
@@ -464,7 +532,7 @@ for i = 1:nvert
                     y=AMPLITUDE;
                 end
                 
-                [T,df,all_Beta(f,j,i,:),xX,xCon]=spm_ancova(X,V,y,c);
+                all_Beta(f,j,i,:)=y'*pinv(X');
                 
                 all_SSy=sum((y-mean(y)).^2);
                 all_residuals=y-(all_Beta(f,j,i,1).*X(:,1)+all_Beta(f,j,i,2).*X(:,2));
@@ -563,17 +631,17 @@ image(cnt).val      = IM_all_B1;
 image(cnt).label   = ['B1_'  spm_file(fname, 'basename')];
 cnt=cnt+1;
 
-for k=1:ntrials
-    image(cnt).val = IM_trials_B3(:,k);
-    image(cnt).label   = ['trial',num2str(k),'_B3_'  spm_file(fname, 'basename')];
-    cnt=cnt+1;
-    image(cnt).val = IM_trials_B2(:,k);
-    image(cnt).label   = ['trial',num2str(k),'_B2_'  spm_file(fname, 'basename')];
-    cnt=cnt+1;
-    image(cnt).val = IM_trials_B1(:,k);
-    image(cnt).label   = ['trial',num2str(k),'_B1_'  spm_file(fname, 'basename')];
-    cnt=cnt+1;
-end
+% for k=1:ntrials
+%     image(cnt).val = IM_trials_B3(:,k);
+%     image(cnt).label   = ['trial',num2str(k),'_B3_'  spm_file(fname, 'basename')];
+%     cnt=cnt+1;
+%     image(cnt).val = IM_trials_B2(:,k);
+%     image(cnt).label   = ['trial',num2str(k),'_B2_'  spm_file(fname, 'basename')];
+%     cnt=cnt+1;
+%     image(cnt).val = IM_trials_B1(:,k);
+%     image(cnt).label   = ['trial',num2str(k),'_B1_'  spm_file(fname, 'basename')];
+%     cnt=cnt+1;
+% end
 
 
 res = image;
