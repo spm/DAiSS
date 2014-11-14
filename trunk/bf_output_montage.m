@@ -110,9 +110,10 @@ for m  = 1:numel(modalities)
                     
                 case 'svd'
                     %% just take top pca component for now
-                    Wc          = W* BF.features.(modalities{m}).C*W'; % bf estimated source covariance matrix
+                    Wc          = W* BF.features.(modalities{m}).C*W'; % bf estimated source covariance matrix                                       
+                       
                     [V,dum,dum]=svd(Wc);
-                    montage.tra=[montage.tra;V(:,1)'*W*U'];
+                    montage.tra=[montage.tra;(V(:,1)'/sqrt(size(Wc, 1)))*W*U'];
                     
                 case 'keep'
                     montage.tra = [montage.tra; W*U'];
