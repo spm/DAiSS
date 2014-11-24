@@ -128,19 +128,40 @@ D  = BF.data.D;
 
 plugin_name = cell2mat(fieldnames(job.plugin));
 S         = job.plugin.(plugin_name);
-S(1).samples = {};
 
-for i = 1:size(job.woi, 1)
-    S.samples{i} = D.indsample(1e-3*job.woi(i, 1)):D.indsample(1e-3*job.woi(i, 2));
-    if isnan(S.samples{i})
-        error('Window specified not in dataset');
-    end;
-end
+%%%%%%%%%%%%
+% MWW 19/11/2014   
+classchanind=[];
+try
+    classchanind=find(strcmp(D.chanlabels,'Class')); % MWW 19/11/2014
+catch
+end;
+
+if isempty(classchanind)
+%%%%%%%%%%%%
+    S(1).samples = {};
+
+    for i = 1:size(job.woi, 1)
+        S.samples{i} = D.indsample(1e-3*job.woi(i, 1)):D.indsample(1e-3*job.woi(i, 2));
+        if isnan(S.samples{i})
+            error('Window specified not in dataset');
+        end;
+    end
+%%%%%%%%%%%%
+% MWW 19/11/2014                
+else
+    try
+        classchanind=find(strcmp(D.chanlabels,'Class')); % MWW 19/11/2014
+    catch
+        error('There must be a Class channel in D if job.woi is not specfied'); 
+    end; 
+end;
+%%%%%%%%%%%%
 
 if isfield(job.whatconditions, 'all')
-    S.trials = 1:D.ntrials;
+    S(1).trials = 1:D.ntrials;
 else    
-    S.trials = D.indtrial(job.whatconditions.condlabel, 'GOOD');
+    S(1).trials = D.indtrial(job.whatconditions.condlabel, 'GOOD');
     if isempty(S.trials)
         error('No trials matched the selection, check the specified condition labels');
     end
@@ -178,12 +199,47 @@ for m = 1:numel(modalities)
         modality_name  = 'MEG';
     end
     
-    BF.features.(modality_name) = feval(['bf_features_' plugin_name], BF, S);
+    %%%%%%%%%%%%
+    % MWW 19/11/2014                
+    if isempty(classchanind)       
+    %%%%%%%%%%%%
     
-    S1.modality = modality_name;
-    S1.chanind  = chanind;
-    
-    BF.features.(modality_name) = feval(['bf_regularise_' reg_name], BF, S1);
+        BF.features.(modality_name) = feval(['bf_features_' plugin_name], BF, S);
+
+        S1.modality = modality_name;
+        S1.chanind  = chanind;
+
+        BF.features.(modality_name) = feval(['bf_regularise_' reg_name], BF, S1);
+
+    %%%%%%%%%%%%
+    % MWW 19/11/2014
+    % added to allow S.samples to be specified via a "Class" channel, which
+    % specifies which time points correspond to each class. This is so that
+    % class-specific features can be calculated separately using just the 
+    % timepoints for each class. This can then be used later for doing 
+    % source reconstruction specific to each class.   
+    % For example, the class specific features (covariances) can be used
+    % by bf_features_cov_bysamples and bf_inverse_lcmv_multicov
+    else
+
+        disp('Ignoring job.woi. Using Class channel in D object to determine the time samples to use');
+        NK=max(squash(D(classchanind,:,:)));
+        for ii=1:NK,
+
+            S.samples = (D(classchanind,:,:)==ii);
+
+            BF.data.samples.(modality_name).class{ii}=S.samples;
+
+            BF.features.(modality_name).class{ii} = feval(['bf_features_' plugin_name], BF, S);
+
+            S1.modality=modality_name;
+            S1.class=ii;
+            BF.features.(modality_name).class{ii} = feval(['bf_regularise_' reg_name], BF, S1);
+
+        end;   
+        
+    end; 
+    %%%%%%%%%%%%
     
     BF.features.(modality_name).chanind = chanind;
 end

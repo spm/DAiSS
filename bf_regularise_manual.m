@@ -25,7 +25,16 @@ elseif nargin < 2
     error('Two input arguments are required');
 end
 
-C = BF.features.(S.modality).C;
+%%%%%%%%%
+%MWW 19/11/2014
+% added to be compatible with multi-class festures (see bf_features)
+if isfield(S,'class'),
+    features_mod      = BF.features.(S.modality).class{S.class};
+else   
+    features_mod      = BF.features.(S.modality);    
+end;
+C = features_mod.C;
+%%%%%%%%%
 
 lambda = (S.lambda/100) * trace(C)/size(C,1);
 C      = C + lambda * eye(size(C));
