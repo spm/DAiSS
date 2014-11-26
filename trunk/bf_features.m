@@ -178,7 +178,7 @@ switch job.fuse
     case 'no'
         modalities = job.modality;
     case 'meg'
-        modalities{1} = intersect(job.modality, {'MEG', 'MEGPLANAR'});
+        modalities{1} = intersect(job.modality, {'MEG', 'MEGMAG', 'MEGPLANAR'});%% added MEGMAG
         modalities    = [modalities intersect(job.modality, {'EEG'})];
     case 'all'
         modalities{1} = job.modality;
@@ -195,6 +195,8 @@ for m = 1:numel(modalities)
         modality_name  = 'EEG';
     elseif isequal(char(modalities{m}), 'MEGPLANAR')
         modality_name  = 'MEGPLANAR';
+    elseif isequal(char(modalities{m}), 'MEGMAG') 
+        modality_name  = 'MEGMAG';    
     else
         modality_name  = 'MEG';
     end

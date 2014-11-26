@@ -52,7 +52,7 @@ if ~isa(S, 'struct')
     S = [];
 end
 
-modalities = intersect(fieldnames(BF.features), {'MEG', 'MEGPLANAR', 'EEG'});
+modalities = intersect(fieldnames(BF.features), {'MEG', 'MEGPLANAR', 'MEGMAG', 'EEG'});
 
 for m = 1:numel(modalities)
     S(1).modality = modalities{m};
