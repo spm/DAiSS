@@ -72,7 +72,6 @@ if nargin == 0
 elseif nargin < 2
     error('Two input arguments are required');
 end
-
 modalities = intersect(fieldnames(BF.features), {'EEG', 'MEG', 'MEGPLANAR'});
 
 for m  = 1:numel(modalities)
@@ -104,7 +103,8 @@ for m  = 1:numel(modalities)
         end
         
         lbl = {};
-        for v = 1:numel(montage.labelnew)
+        
+        for v = 1:numel(montage.labelnew)       % v: VOI number
             if isfield(BF.sources, 'voi')
                 ind = find(BF.sources.voi.pos2voi == v);
             elseif isfield(S.vois{v}, 'maskdef') % adapted from bf_sources_voi, v115
@@ -113,7 +113,7 @@ for m  = 1:numel(modalities)
                 vox = spm_eeg_inv_transform_points(inv(V.mat), mnipos);
                 Y   = spm_sample_vol(V, vox(:, 1),  vox(:, 2), vox(:, 3), 0);
                 ind = find(~isnan(Y) & abs(Y)>0);
-
+                
                 % if no sources within mask, use sources close to mask
                 if isempty(ind)
                     maxdist = 5;
@@ -146,49 +146,35 @@ for m  = 1:numel(modalities)
             
             if isempty(ind) && isfield(S.vois{v}, 'voidef')
                 error(['No sources were found close enough for VOI ' S.vois{v}.voidef.label]);
-            elseif isempty(ind) && isfield(S.vois{v}, 'maskdef')   
-                 error(['No sources were found close enough for VOI ' S.vois{v}.maskdef.label]);
+            elseif isempty(ind) && isfield(S.vois{v}, 'maskdef')
+                error(['No sources were found close enough for VOI ' S.vois{v}.maskdef.label]);
             end
             
-            for indx = 1:numel(ind)
-                W   = cat(1, BF.inverse.(modalities{m}).W{ind(indx)});
-                
-                switch S.method
-                    case 'max'
-                        
-                        Wc          = W* BF.features.(modalities{m}).C*W';  % bf estimated source covariance matrix
-                        [dum, mi]   = max(diag(Wc));
-                        montage.tra = [montage.tra; W(mi, :)*U'];
-                        if numel(ind)>1
-                            lbl{end+1,1} = [montage.labelnew{v} '_source_' num2str(indx)];
-                        end;
-                        
-                    case 'svd'
-                        %% just take top pca component for now
-                        Wc          = W* BF.features.(modalities{m}).C*W'; % bf estimated source covariance matrix
-                        
-                        [V,dum,dum]=svd(Wc);
-                        montage.tra=[montage.tra;(V(:,1)'/sqrt(size(Wc, 1)))*W*U'];
-                        if numel(ind)>1
-                            lbl{end+1,1} = [montage.labelnew{v} '_source_' num2str(indx)];
-                        end;
-                        
-                    case 'keep'
-                        montage.tra = [montage.tra; W*U'];
-                        for i = 1:size(W, 1)
-                            if numel(ind)>1
-                                lbl{end+1, 1} = [montage.labelnew{v}, '_source_' num2str(indx), '_' num2str(i)];
-                            else
-                                lbl{end+1, 1} = [montage.labelnew{v} '_' num2str(i)];
-                            end
-                        end
-                end;
-            end
+            W   = cat(1, BF.inverse.(modalities{m}).W{ind});
             
-            if ~isempty(lbl)
-                montage.labelnew = lbl;
-            end
+            switch S.method
+                case 'max'
+                    Wc          = W* BF.features.(modalities{m}).C*W';  % bf estimated source covariance matrix
+                    [dum, mi]   = max(diag(Wc));
+                    montage.tra = [montage.tra; W(mi, :)*U'];
+                case 'svd'
+                    %% just take top pca component for now
+                    Wc          = W* BF.features.(modalities{m}).C*W'; % bf estimated source covariance matrix
+                    
+                    [V,dum,dum]=svd(Wc);
+                    montage.tra=[montage.tra;(V(:,1)'/sqrt(size(Wc, 1)))*W*U'];
+                case 'keep'
+                    montage.tra = [montage.tra; W*U'];
+                    for i = 1:size(W, 1)
+                        lbl{end+1, 1} = [montage.labelnew{v} '_' num2str(i)];
+                    end
+            end;
         end;
+        
+        if ~isempty(lbl)
+            montage.labelnew = lbl;
+        end
+        
     else
         mnipos = spm_eeg_inv_transform_points(BF.data.transforms.toMNI, BF.sources.pos);
         for i = 1:size(mnipos, 1)
