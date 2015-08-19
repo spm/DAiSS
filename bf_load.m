@@ -28,7 +28,7 @@ else
     BF = load(file, fields{:});
 end
 
-[sel1, sel2] = match_str(bf_std_fields, fieldnames(BF));
+[sel1, sel2] = spm_match_str(bf_std_fields, fieldnames(BF));
 
 [other_fields, sel3] = setdiff(fieldnames(BF), bf_std_fields);
 [other_fields_sorted, sel4] = sort(other_fields);
