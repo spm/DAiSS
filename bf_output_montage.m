@@ -3,7 +3,7 @@ function mont = bf_output_montage(BF, S)
 % Copyright (C) 2013 Wellcome Trust Centre for Neuroimaging
 
 % Vladimir Litvak
-% $Id$
+% $Id: bf_output_montage.m 130 2015-07-02 16:25:57Z dominik.bach@googlemail.com $
 
 %--------------------------------------------------------------------------
 if nargin == 0
@@ -81,6 +81,8 @@ for m  = 1:numel(modalities)
     montage.labelorg = BF.inverse.(modalities{m}).channels;
     montage.labelorg = montage.labelorg(:);
     montage.tra      = [];
+    
+   chantypenew = 'LFP';
     
     if isfield(BF.inverse.(modalities{m}), 'label')
         montage.labelnew = BF.inverse.(modalities{m}).label(:);
@@ -180,13 +182,14 @@ for m  = 1:numel(modalities)
         for i = 1:size(mnipos, 1)
             w = BF.inverse.(modalities{m}).W{i};
             if ~isnan(w)
-                montage.labelnew{i} = sprintf('%d_%d_%d', round(mnipos(i, :)));
+                montage.labelnew{i} = sprintf('%.2f_%.2f_%.2f', mnipos(i, :));
                 montage.tra = [montage.tra; w*U'];
             end
         end
+        chantypenew = 'SRC';
     end
     
-    montage.chantypenew = repmat({'LFP'}, length(montage.labelnew), 1);
+    montage.chantypenew = repmat({chantypenew}, length(montage.labelnew), 1);
     montage.chanunitnew = repmat({'nA*m'}, length(montage.labelnew), 1);
     
     mont.(modalities{m}) = montage;

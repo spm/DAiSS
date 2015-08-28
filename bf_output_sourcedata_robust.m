@@ -3,7 +3,7 @@ function sourcedata_robust = bf_output_sourcedata_robust(BF, S)
 % Copyright (C) 2013 Wellcome Trust Centre for Neuroimaging
 
 % Vladimir Litvak
-% $Id$
+% $Id: bf_output_sourcedata_robust.m 89 2013-11-14 12:34:26Z adambaker86@gmail.com $
 
 %--------------------------------------------------------------------------
 if nargin == 0
@@ -100,7 +100,7 @@ for m  = 1:numel(modalities)
         for i = 1:size(mnipos, 1)
             w = BF.inverse.(modalities{m}).W{i};
             if ~isnan(w)
-                ftdata.label{i} = sprintf('%d_%d_%d', round(mnipos(i, :)));
+                ftdata.label{i} = sprintf('%.2f_%.2f_%.2f', mnipos(i, :));
                 L{i}            = BF.inverse.(modalities{m}).L{i};
             end
         end

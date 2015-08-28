@@ -3,7 +3,7 @@ function BF = bf_load(file, fields)
 % Copyright (C) 2012 Wellcome Trust Centre for Neuroimaging
 
 % Vladimir Litvak
-% $Id$
+% $Id: bf_load.m 131 2015-08-19 16:04:20Z litvak.vladimir@gmail.com $
 
 % get filename
 %-------------------------------------------------------------------------

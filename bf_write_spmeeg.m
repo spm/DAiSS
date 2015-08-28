@@ -3,7 +3,7 @@ function res = bf_write_spmeeg(BF, S)
 % Copyright (C) 2013 Wellcome Trust Centre for Neuroimaging
 
 % Vladimir Litvak
-% $Id$
+% $Id: bf_write_spmeeg.m 116 2014-07-15 15:36:02Z litvak.vladimir@gmail.com $
 
 %--------------------------------------------------------------------------
 if nargin == 0
@@ -144,7 +144,12 @@ elseif isfield(BF.output, 'sourcedata')
         Ds = events(Ds, ':', D.events);
     end
     
-    Ds = chantype(Ds, ':', 'LFP');
+    
+    if isfield(BF.sources, 'voi')
+        Ds = chantype(Ds, ':', 'LFP');
+    else
+        Ds = chantype(Ds, ':', 'SRC');
+    end
     
     if ~isempty(addchannels)
          Ds = chantype(Ds, (Ds.nchannels-length(addind)+1):Ds.nchannels, D.chantype(addind));

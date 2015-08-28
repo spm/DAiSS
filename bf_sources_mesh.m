@@ -3,7 +3,7 @@ function mesh = bf_sources_mesh(BF, S)
 % Copyright (C) 2013 Wellcome Trust Centre for Neuroimaging
 
 % Vladimir Litvak
-% $Id$
+% $Id: bf_sources_mesh.m 98 2013-12-12 16:06:30Z litvak.vladimir@gmail.com $
 
 %--------------------------------------------------------------------------
 if nargin == 0
@@ -13,7 +13,7 @@ if nargin == 0
     orient.labels  = {'Unoriented', 'Original', 'Downsampled'};
     orient.values  = {'unoriented', 'original', 'downsampled'};
     orient.val     = {'unoriented'};
-        
+    
     fdownsample      = cfg_entry;
     fdownsample.tag  = 'fdownsample';
     fdownsample.name = 'Downsample factor';
@@ -21,7 +21,15 @@ if nargin == 0
     fdownsample.num = [1 1];
     fdownsample.val = {1};
     fdownsample.help = {'A number that determines mesh downsampling',...
-        'e.g 5 for taking every 5th vertex'};    
+        'e.g 5 for taking every 5th vertex'};
+    
+    symmetric         = cfg_menu;
+    symmetric.tag     = 'symmetric';
+    symmetric.name    = 'Symmetric';
+    symmetric.help    = {'Create a symmetric mesh by reflecting on of the hemispheres.'};
+    symmetric.labels  = {'No', 'Reflect left', 'Reflect right'};
+    symmetric.values  = {'no', 'left', 'right'};
+    symmetric.val = {'no'};
     
     flip         = cfg_menu;
     flip.tag     = 'flip';
@@ -34,8 +42,7 @@ if nargin == 0
     mesh = cfg_branch;
     mesh.tag = 'mesh';
     mesh.name = 'Cortical mesh';
-    mesh.val = {orient, fdownsample, flip};
-    
+    mesh.val = {orient, fdownsample, symmetric, flip};
     
     return
 elseif nargin < 2
@@ -44,12 +51,46 @@ end
 
 original = BF.data.mesh.tess_mni;
 
-mesh = [];
-mesh.canonical = original;
+canonical = original;
 
 if S.fdownsample ~= 1
-    mesh.canonical = export(gifti(reducepatch(export(gifti(mesh.canonical), 'patch'), 1/S.fdownsample)), 'spm');
+    canonical = export(gifti(reducepatch(export(gifti(canonical), 'patch'), 1/S.fdownsample)), 'spm');
 end
+
+if ~isequal(S.symmetric, 'no')
+    meshcomp = spm_mesh_split(gifti(canonical));
+    
+    if isequal(S.symmetric, 'left')
+        if median(meshcomp(1).vertices(:, 1))<0
+            side = meshcomp(1);
+        else
+            side = meshcomp(2);
+        end
+    elseif isequal(S.symmetric, 'right')
+        if median(meshcomp(1).vertices(:, 1))>0
+            side = meshcomp(1);
+        else
+            side = meshcomp(2);
+        end
+    end
+    
+    cside = side;
+    cside.vertices(:, 1) = -1*side.vertices(:, 1);
+    cside.faces = side.faces+size(side.vertices, 1);
+    
+    canonical = [];
+    if isequal(S.symmetric, 'left')
+        canonical.vert = [side.vertices; cside.vertices];
+    else
+        canonical.vert = [cside.vertices; side.vertices];
+    end
+    
+    canonical.face = [side.faces; cside.faces];
+end
+
+mesh = [];
+mesh.canonical = canonical;
+
 
 if isfield(BF.data.mesh, 'def')
     mesh.individual = spm_swarp(gifti(mesh.canonical), BF.data.mesh.def);
