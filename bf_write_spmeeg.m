@@ -90,6 +90,11 @@ if isfield(BF.output, 'montage')
     for i = 1:length(sel1)
         montage.labelnew(end+1) = addchannels(sel2(i));
         montage.tra(end+1, sel1(i)) = 1;
+        
+        montage.chantypenew(end+1) = chantype(D, D.indchannel(addchannels(sel2(i))))';
+        montage.chanunitnew(end+1) = units(D, D.indchannel(addchannels(sel2(i))))';
+
+        
     end
     addchannels(sel2) = [];
     
