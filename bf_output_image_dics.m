@@ -88,6 +88,14 @@ if nargin == 0
     reference.values = {power, refchan, refdip};
     reference.val = {power};
     
+    powmethod         = cfg_menu;
+    powmethod.tag     = 'powmethod';
+    powmethod.name    = 'Power summary method';
+    powmethod.help    = {'How to summarise the power for vector beamformer'};
+    powmethod.labels  = {'trace', 'lambda1', 'imag'};
+    powmethod.values  = {'trace', 'lambda1', 'imag'};
+    powmethod.val = {'lambda1'};
+    
     foi = cfg_entry;
     foi.tag = 'foi';
     foi.name = 'Frequency band of interest';
@@ -153,7 +161,7 @@ if nargin == 0
     image_dics      = cfg_branch;
     image_dics.tag  = 'image_dics';
     image_dics.name = 'DICS image';
-    image_dics.val  = {reference, whatconditions, sametrials, woi,  contrast, foi, taper, result, scale, modality};
+    image_dics.val  = {reference, powmethod, whatconditions, sametrials, woi,  contrast, foi, taper, result, scale, modality};
     
     res = image_dics;
     
@@ -234,7 +242,7 @@ elseif isfield(S.reference, 'refdip')
         warning(['Closest match is ' mdist ' mm away from the specified location.']);
     end
     
-    Wr =  BF.inverse(S.modality).W{ind};
+    Wr =  BF.inverse.(S.modality).W{ind};
     
     prefix = 'dics_dipcoh';
 else
@@ -346,19 +354,19 @@ for c = 1:size(mCf, 1)
             for j = 1:numel(mCf(c, :))
                 if ~isempty(refindx)
                     estimate = ft_inverse_beamformer_dics(w, mCf{c, j}, 'Cr', mCr{c, j}, 'Pr', mPr(c, j), ...
-                        'filterinput', 'yes',  'projectnoise', S.scale, ...
+                        'filterinput', 'yes',  'projectnoise', S.scale, 'powmethod', S.powmethod, ...
                         'keepfilter', 'no', 'keepleadfield', 'no', 'keepcsd', 'no', 'feedback', 'none');
                     
                     cpow(j) = estimate.coh;
                 elseif ~isempty(Wr)
                     estimate = ft_inverse_beamformer_dics(w, mCf{c, j}, 'refdip', Wr, ...
-                        'filterinput', 'yes',  'projectnoise', S.scale, ...
+                        'filterinput', 'yes',  'projectnoise', S.scale, 'powmethod', S.powmethod, ...
                         'keepfilter', 'no', 'keepleadfield', 'no', 'keepcsd', 'no', 'feedback', 'none');
                     
                     cpow(j) = estimate.coh;
                 else
                     estimate = ft_inverse_beamformer_dics(w, mCf{c, j},...
-                        'filterinput', 'yes',  'projectnoise', S.scale, ...
+                        'filterinput', 'yes',  'projectnoise', S.scale, 'powmethod', S.powmethod, ...
                         'keepfilter', 'no', 'keepleadfield', 'no', 'keepcsd', 'no', 'feedback', 'none');
                     
                     cpow(j) = estimate.pow;

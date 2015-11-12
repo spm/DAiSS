@@ -76,6 +76,7 @@ end
 % use these two logical flags instead of doing the string comparisons each time again
 powtrace   = strcmp(powmethod, 'trace');
 powlambda1 = strcmp(powmethod, 'lambda1');
+imagcoh       = strcmp(powmethod, 'imag');
 
 % dics has the following sub-methods, which depend on the additional input arguments
 if ~isempty(Cr) && ~isempty(Pr) && isempty(refdip)
@@ -231,7 +232,7 @@ switch submethod
             if ~filteronly
                 if powlambda1
                     [pow, ori] = lambda1(filt * Cf * ctranspose(filt));            % compute the power and orientation at the dipole location, Gross eqn. 4, 5 and 8
-                elseif powtrace
+                elseif powtrace || imagcoh
                     pow = real(trace(filt * Cf * ctranspose(filt)));               % compute the power at the dipole location
                 end
                 csd = filt*Cr;                                                   % Gross eqn. 6
@@ -240,6 +241,11 @@ switch submethod
                     coh = lambda1(csd)^2 / (pow * Pr);                             % Gross eqn. 9
                 elseif powtrace
                     coh = norm(csd)^2 / (pow * Pr);
+                elseif imagcoh
+                    if numel(csd)>1
+                        error('imag option not supported for matrix csd');
+                    end
+                    coh = abs(imag(csd)) / (pow * Pref);
                 end
                 
                 estimate.pow(i) = pow;
@@ -283,7 +289,7 @@ switch submethod
         
         if powlambda1
             Pref = lambda1(filt1 * Cf * ctranspose(filt1));      % compute the power at the first dipole location, Gross eqn. 8
-        elseif powtrace
+        elseif powtrace || imagcoh
             Pref = real(trace(filt1 * Cf * ctranspose(filt1)));  % compute the power at the first dipole location
         end
         
@@ -303,13 +309,18 @@ switch submethod
             
             if powlambda1
                 pow = lambda1(filt2 * Cf * ctranspose(filt2));     % compute the power at the second dipole location, Gross eqn. 8
-            elseif powtrace
+            elseif powtrace || imagcoh
                 pow = real(trace(filt2 * Cf * ctranspose(filt2))); % compute the power at the second dipole location
             end
             if powlambda1
                 coh = lambda1(csd)^2 / (pow * Pref);               % compute the coherence between the first and second dipole
             elseif powtrace
                 coh = real(trace((csd)))^2 / (pow * Pref);         % compute the coherence between the first and second dipole
+            elseif imagcoh
+                if numel(csd)>1
+                    error('imag option not supported for matrix csd');
+                end
+                coh = abs(imag(csd)) / (pow * Pref);                                
             end
             
             estimate.pow(i) = pow;
