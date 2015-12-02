@@ -82,12 +82,12 @@ if numel(D.inv) < val
     error('Invalid inversion index');
 end
 
-cd(outdir);
+% cd(outdir);
 
 %-Ask about overwriting files from previous analyses
 %--------------------------------------------------------------------------
-if exist(fullfile(pwd,'BF.mat'),'file') && ~job.overwrite
-    str = {'Current directory contains existing BF file:',...
+if exist(fullfile(outdir, 'BF.mat'),'file') && ~job.overwrite
+    str = {'Output directory contains existing BF file:',...
         'Continuing will overwrite existing file!'};
     if spm_input(str,1,'bd','stop|continue',[1,0],1,mfilename);
         fprintf('%-40s: %30s\n\n',...
@@ -103,7 +103,7 @@ BF.data   = spm_eeg_inv_get_vol_sens(D, val, space, gradsource);
 BF.data.D = D;
 BF.data.mesh = D.inv{val}.mesh;
 
-bf_save(BF, 'overwrite');
+bf_save_path(BF,fullfile(outdir, 'BF.mat'));
 
 out.BF{1} = fullfile(outdir, 'BF.mat');
 
