@@ -2,7 +2,7 @@ function res = bf_features_cov(BF, S)
 % Simple band limited covariance computation
 % Copyright (C) 2012 Wellcome Trust Centre for Neuroimaging
 
-% Gareth Barnes
+% Gareth Barnes  
 % $Id$
 
 %--------------------------------------------------------------------------
