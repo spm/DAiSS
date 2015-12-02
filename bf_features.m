@@ -120,9 +120,9 @@ function  out = bf_features_run(job)
 
 outdir = spm_file(job.BF{1}, 'fpath');
 
-cd(outdir);
+% cd(outdir);
 
-BF = bf_load('BF.mat', {'data', 'sources'});
+BF = bf_load(fullfile(outdir, 'BF.mat'));
 D  = BF.data.D;
 
 
@@ -248,7 +248,7 @@ end
 
 BF.features.trials = S.trials;
 
-bf_save(BF);
+bf_save_path(BF,fullfile(outdir, 'BF.mat'));
 
 out.BF{1} = fullfile(outdir, 'BF.mat');
 end
