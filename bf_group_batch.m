@@ -70,9 +70,8 @@ for i = 1:numel(BF)
     if isfield(matlabbatch{1}.spm.tools.beamforming, 'data');
         D = spm_eeg_load(BF{i});
         matlabbatch{1}.spm.tools.beamforming.data.D = {fullfile(D)};
-        res = mkdir(D.path, [S.prefix 'BF']);
-        matlabbatch{1}.spm.tools.beamforming.data.dir = {fullfile(D.path, [S.prefix 'BF'])};
-        
+        dum = mkdir(D.path, [S.prefix 'BF']);
+        matlabbatch{1}.spm.tools.beamforming.data.dir = {fullfile(D.path, [S.prefix 'BF'])};        
     else
         module = fieldnames(matlabbatch{1}.spm.tools.beamforming);
         matlabbatch{1}.spm.tools.beamforming(module).BF = BF(i);        
