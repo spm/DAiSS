@@ -31,7 +31,14 @@ batchfile = char(S.batchfile);
 if isequal(spm_file(batchfile, 'ext'), 'm')
     cdir = pwd;
     if ~isempty(spm_file(batchfile, 'path'))
-        cd(spm_file(batchfile, 'path'));
+        try
+            cd(spm_file(batchfile, 'path'));
+        catch
+            % This is to allow the use of pipelines saved with DAiSS
+            % on different machines
+            tbxdir = fileparts(mfilename('fullpath'));
+            cd(tbxdir);
+        end
     end
     vars = who;
     eval(spm_file(batchfile, 'basename'));
@@ -45,7 +52,12 @@ if isequal(spm_file(batchfile, 'ext'), 'm')
         error('Invalid batch specification');
     end
 elseif isequal(spm_file(batchfile, 'ext'), 'mat')
-    tmp  = load(batchfile);
+    try
+        tmp  = load(batchfile);
+    catch
+        tbxdir = fileparts(mfilename('fullpath'));
+        tmp  = load(spm_file(batchfile, 'path', tbxdir));
+    end
     name = fieldnames(tmp);
     if numel(name)~= 1
         error('Invalid batch specification');
