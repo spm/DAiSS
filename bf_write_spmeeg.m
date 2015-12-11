@@ -146,7 +146,9 @@ elseif isfield(BF.output, 'sourcedata')
             Ds = events(Ds, i, ev);
         end
     else
-        Ds = events(Ds, ':', D.events);
+        if ~isempty(D.events)
+            Ds = events(Ds, ':', D.events);
+        end
     end
     
     

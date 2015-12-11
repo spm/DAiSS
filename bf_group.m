@@ -67,7 +67,7 @@ if ~isa(BF, 'cell')
     BF = {BF};
 end
 
-out.BF = BF;
+out.BF = BF(:);
 
 end
 

@@ -65,9 +65,8 @@ function  out = bf_source_run(job)
 
 outdir = spm_file(job.BF{1}, 'fpath');
 
-cd(outdir);
 
-BF = bf_load('BF.mat');
+BF = bf_load(fullfile(outdir, 'BF.mat'));
 
 plugin_name = cell2mat(fieldnames(job.plugin));
 
@@ -183,7 +182,7 @@ for m = 1:numel(modalities)
     end       
 end
 
-bf_save(BF);
+bf_save_path(BF,fullfile(outdir, 'BF.mat'));
 
 out.BF{1} = fullfile(outdir, 'BF.mat');
 end
