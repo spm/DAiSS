@@ -79,6 +79,15 @@ elseif nargin < 2
     error('Two input arguments are required');
 end
 
+
+iskull = export(gifti(BF.data.mesh.tess_iskull), 'ft');
+
+M1 = BF.data.transforms.toNative;
+M1 = BF.data.transforms.toMNI/M1;
+
+iskull = ft_convert_units(ft_transform_geometry(M1, iskull));
+
+       
 % transform MNI coords in MNI space into space where we are doing the
 % beamforming
 M = inv(BF.data.transforms.toMNI);
@@ -126,8 +135,15 @@ end
 
 voi.label = voi.label(:);
 
+% Remove points outside the brain
+inside = ft_inside_vol(voi.pos, struct('bnd', iskull));
+
+voi.pos(~inside, :)  = [];
+voi.pos2voi(~inside) = [];
+
 if any(any(ori))
-    voi.ori = ori;
+    voi.ori = ori(inside, :);
 end
+
 
 voi = ft_transform_geometry(M, voi);
