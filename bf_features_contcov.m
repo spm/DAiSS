@@ -28,7 +28,16 @@ samples = S.samples{1};
 
 bad  = badsamples(D, S.channels, samples, 1);
 
-chngpnt = [1 find(any(diff(bad, [], 2)))+1];
+% Combine fixed 1 sec segments with change points of bad channel number
+% and prune to avoid too many short segments
+fixedseg = 1:round(D.fsample):D.nsamples;
+
+chngpnt  = [1 find(any(diff(bad, [], 2)))+1];
+
+prunetable = abs(repmat(fixedseg, length(chngpnt), 1)-repmat(chngpnt', 1, length(fixedseg)));
+fixedseg(any(prunetable<D.fsample)) = [];
+
+chngpnt = sort([fixedseg, chngpnt]);
 
 nsegments = length(chngpnt);
 
