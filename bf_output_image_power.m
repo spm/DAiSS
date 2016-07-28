@@ -64,6 +64,15 @@ if nargin == 0
     contrast.num = [1 Inf];
     contrast.val = {1};
     
+    logpower = cfg_menu;
+    logpower.tag = 'logpower';
+    logpower.name = 'Take log of power';
+    logpower.labels = {'yes', 'no'};
+    logpower.values = {true, false};
+    logpower.val = {false};
+    logpower.help = {'Take the log of power before computing time contrast',...
+        'This is equivalent to log of the ratio.'};
+    
     result         = cfg_menu;
     result.tag     = 'result';
     result.name    = 'What to output';
@@ -115,7 +124,7 @@ if nargin == 0
     image_power      = cfg_branch;
     image_power.tag  = 'image_power';
     image_power.name = 'Power image';
-    image_power.val  = {whatconditions, sametrials, woi, foi, contrast, result, scale, powermethod, modality};
+    image_power.val  = {whatconditions, sametrials, woi, foi, contrast, logpower, result, scale, powermethod, modality};
     
     res = image_power;
     
@@ -297,7 +306,11 @@ for c = 1:size(Cy, 1)
                 end
             end
             
-            pow(i) = cpow*S.contrast';
+            if S.logpower
+                pow(i) = log(cpow)*S.contrast';
+            else
+                pow(i) = cpow*S.contrast';
+            end
         end
         
         if ismember(i, Ibar)

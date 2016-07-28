@@ -68,7 +68,7 @@ if nargin == 0
     refchan.tag  = 'refchan';
     refchan.name = 'Reference channel';
     refchan.val  = {name, shuffle};
-        
+    
     refdip = cfg_entry;
     refdip.tag = 'refdip';
     refdip.name = 'Reference source';
@@ -100,7 +100,7 @@ if nargin == 0
     foi.tag = 'foi';
     foi.name = 'Frequency band of interest';
     foi.strtype = 'r';
-    foi.num = [1 2];    
+    foi.num = [1 2];
     foi.help = {'Frequency window within which to compute CSD over (Hz)'};
     
     taper = cfg_menu;
@@ -117,6 +117,15 @@ if nargin == 0
     contrast.strtype = 'i';
     contrast.num = [1 Inf];
     contrast.val = {1};
+    
+    logpower = cfg_menu;
+    logpower.tag = 'logpower';
+    logpower.name = 'Take log of power';
+    logpower.labels = {'yes', 'no'};
+    logpower.values = {true, false};
+    logpower.val = {false};
+    logpower.help = {'Take the log of power before computing time contrast',...
+        'This is equivalent to log of the ratio.'};
     
     result         = cfg_menu;
     result.tag     = 'result';
@@ -161,7 +170,7 @@ if nargin == 0
     image_dics      = cfg_branch;
     image_dics.tag  = 'image_dics';
     image_dics.name = 'DICS image';
-    image_dics.val  = {reference, powmethod, whatconditions, sametrials, woi,  contrast, foi, taper, result, scale, modality};
+    image_dics.val  = {reference, powmethod, whatconditions, sametrials, woi,  contrast, logpower, foi, taper, result, scale, modality};
     
     res = image_dics;
     
@@ -376,7 +385,12 @@ for c = 1:size(mCf, 1)
                     cpow(j) = cpow(j)./estimate.noise;
                 end
                 
-                pow(i) = cpow*S.contrast';
+                if S.logpower
+                    pow(i) = log(cpow)*S.contrast';
+                else
+                    pow(i) = cpow*S.contrast';
+                end
+                
             end
         end
         if ismember(i, Ibar)
@@ -385,7 +399,7 @@ for c = 1:size(mCf, 1)
     end
     
     spm_progress_bar('Clear');
-        
+    
     image(c).val   = pow;
     
     switch S.result
@@ -401,7 +415,7 @@ for c = 1:size(mCf, 1)
             end
             image(c).label = [prefix '_cond_' S.whatconditions.condlabel{k}...
                 '_trial_' num2str(alltrials(c)) '_' spm_file(D.fname, 'basename')];
-    end    
+    end
 end
 
 spm('Pointer', 'Arrow');drawnow;
