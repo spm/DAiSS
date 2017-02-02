@@ -103,6 +103,10 @@ BF.data   = spm_eeg_inv_get_vol_sens(D, val, space, gradsource);
 BF.data.D = D;
 BF.data.mesh = D.inv{val}.mesh;
 
+try
+    delete(fullfile(outdir, 'BF.mat'));
+end
+
 bf_save_path(BF,fullfile(outdir, 'BF.mat'));
 
 out.BF{1} = fullfile(outdir, 'BF.mat');

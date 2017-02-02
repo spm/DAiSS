@@ -137,7 +137,9 @@ for m = 1:numel(modalities)
             
             hold on
             
-            ft_plot_sens(sens, 'style', '*b');
+            try
+                ft_plot_sens(sens, 'style', '*b');
+            end
             
             plot3(pos(:, 1), pos(:, 2), pos(:, 3), '.r', 'MarkerSize', 10);
             
