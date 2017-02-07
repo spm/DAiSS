@@ -55,7 +55,6 @@ if nargin == 0
     woi.name = 'Time windows of interest';
     woi.strtype = 'r';
     woi.num = [Inf 2];
-    woi.val = {[-Inf Inf]};
     woi.help = {'Time windows (in ms)'};
     
     foi = cfg_entry;
@@ -63,7 +62,6 @@ if nargin == 0
     foi.name = 'Frequency bands of interest';
     foi.strtype = 'r';
     foi.num = [Inf 2];
-    foi.val = {[-Inf Inf]};
     foi.help = {'Freq bands (in Hz)'};
     
     
@@ -369,6 +367,9 @@ for fband=1:Nbands, %% allows one to break up spectrum and ignore some frequenci
     freqstr=[freqstr sprintf('%3.1f-%3.1f,',dctfreq(min(j)),dctfreq(max(j)))];
 end; % for fband=1:Nbands
 
+if isempty(allfreqind),
+    error('No valid frequency range found');
+end;
 % Tfull      = dctT(:,allfreqind); %% A filter for all bands (not necessarily continuous)
 %% end of freq band section
 

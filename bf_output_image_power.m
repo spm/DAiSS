@@ -46,16 +46,14 @@ if nargin == 0
     woi.name = 'Time windows of interest';
     woi.strtype = 'r';
     woi.num = [Inf 2];
-    woi.val = {[-Inf Inf]};
-    woi.help = {'Time windows (in ms)'};
+    woi.help = {'Time windows (in ms). N.B. Make sure these windows lie within the covariance window'};
     
     foi = cfg_entry;
     foi.tag = 'foi';
     foi.name = 'Frequency bands of interest';
     foi.strtype = 'r';
     foi.num = [Inf 2];
-    foi.val = {[0 Inf]};
-    foi.help = {'Frequency windows within which to compute covariance over (sec)'};
+    foi.help = {'Frequency windows within which to power changes over (Hz) .N.B. Check this lies within covariance window'};
     
     contrast = cfg_entry;
     contrast.tag = 'contrast';
@@ -167,6 +165,9 @@ for fband = 1:nbands, %% allows one to break up spectrum and ignore some frequen
 end % for fband=1:Nbands
 
 allfreqind = sort(unique(allfreqind));
+if isempty(allfreqind),
+    error('No valid frequency range found');
+end;
 
 Tband = dctT(:, allfreqind); % filter to this band
 
