@@ -138,7 +138,9 @@ for m = 1:numel(modalities)
             hold on
             
             try
-                ft_plot_sens(sens, 'style', '*b');
+                ft_plot_sens(sens, 'style', '*b', 'coil',  ft_senstype(sens, 'eeg'));
+            catch
+                ft_plot_sens(sens, 'style', '*b', 'coilshape', 'point', 'coil', ft_senstype(sens, 'eeg'));
             end
             
             plot3(pos(:, 1), pos(:, 2), pos(:, 3), '.r', 'MarkerSize', 10);
