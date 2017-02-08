@@ -1,6 +1,6 @@
 %-----------------------------------------------------------------------
-% Job saved on 11-Jul-2013 15:13:20 by cfg_util (rev $Rev$)
-% spm SPM - SPM12b (beta)
+% Job saved on 08-Feb-2017 12:35:41 by cfg_util (rev $Rev: 6942 $)
+% spm SPM - SPM12 (12.3)
 % cfg_basicio BasicIO - Unknown
 %-----------------------------------------------------------------------
 matlabbatch{1}.spm.meeg.source.headmodel.D = {''};
@@ -25,17 +25,22 @@ matlabbatch{2}.spm.tools.beamforming.data.space = 'MNI-aligned';
 matlabbatch{2}.spm.tools.beamforming.data.overwrite = 0;
 matlabbatch{3}.spm.tools.beamforming.sources.BF(1) = cfg_dep('Prepare data: BF.mat file', substruct('.','val', '{}',{2}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','BF'));
 matlabbatch{3}.spm.tools.beamforming.sources.reduce_rank = [2 3];
+matlabbatch{3}.spm.tools.beamforming.sources.keep3d = 1;
 matlabbatch{3}.spm.tools.beamforming.sources.plugin.grid.resolution = 10;
 matlabbatch{3}.spm.tools.beamforming.sources.plugin.grid.space = 'MNI template';
+matlabbatch{3}.spm.tools.beamforming.sources.visualise = 1;
 matlabbatch{4}.spm.tools.beamforming.features.BF(1) = cfg_dep('Define sources: BF.mat file', substruct('.','val', '{}',{3}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','BF'));
 matlabbatch{4}.spm.tools.beamforming.features.whatconditions.all = 1;
 matlabbatch{4}.spm.tools.beamforming.features.woi = [-Inf Inf];
+matlabbatch{4}.spm.tools.beamforming.features.modality = {'MEG'};
+matlabbatch{4}.spm.tools.beamforming.features.fuse = 'no';
 matlabbatch{4}.spm.tools.beamforming.features.plugin.cov.foi = [0 100];
-matlabbatch{4}.spm.tools.beamforming.features.plugin.cov.taper = 'hanning';
-matlabbatch{4}.spm.tools.beamforming.features.regularisation.minkatrunc.reduce = 1;
+matlabbatch{4}.spm.tools.beamforming.features.plugin.cov.taper = 'none';
+matlabbatch{4}.spm.tools.beamforming.features.regularisation.manual.lambda = 5;
 matlabbatch{4}.spm.tools.beamforming.features.bootstrap = false;
 matlabbatch{5}.spm.tools.beamforming.inverse.BF(1) = cfg_dep('Covariance features: BF.mat file', substruct('.','val', '{}',{4}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','BF'));
-matlabbatch{5}.spm.tools.beamforming.inverse.plugin.lcmv = 0;
+matlabbatch{5}.spm.tools.beamforming.inverse.plugin.lcmv.orient = true;
+matlabbatch{5}.spm.tools.beamforming.inverse.plugin.lcmv.keeplf = false;
 matlabbatch{6}.spm.tools.beamforming.output.BF(1) = cfg_dep('Inverse solution: BF.mat file', substruct('.','val', '{}',{5}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','BF'));
 matlabbatch{6}.spm.tools.beamforming.output.plugin.image_mv.isdesign.custom.whatconditions.all = 1;
 matlabbatch{6}.spm.tools.beamforming.output.plugin.image_mv.isdesign.custom.contrast = [-1 1];
