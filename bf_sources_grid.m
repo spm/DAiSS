@@ -22,11 +22,19 @@ if nargin == 0
     space.labels = {'MNI template', 'MNI-aligned', 'Head', 'Native'};
     space.values = {'MNI template', 'MNI-aligned', 'Head', 'Native'};
     space.val = {'MNI template'};
+    
+    constrain = cfg_menu;
+    constrain.tag = 'constrain';
+    constrain.name = 'Coordinate sources to';
+    constrain.help = {'The boundary to which the grid is confined'};
+    constrain.labels = {'Inner skull', 'Scalp'};
+    constrain.values = {'iskull', 'scalp'};
+    constrain.val = {'iskull'};
 
     grid = cfg_branch;
     grid.tag = 'grid';
     grid.name = 'Grid';
-    grid.val = {resolution, space};
+    grid.val = {resolution, space, constrain};
     
     res = grid;
     
@@ -35,7 +43,12 @@ elseif nargin < 2
     error('Two input arguments are required');
 end
 
-iskull = export(gifti(BF.data.mesh.tess_iskull), 'ft');
+switch S.constrain
+    case 'iskull'
+        constraint = export(gifti(BF.data.mesh.tess_iskull), 'ft');
+    case 'scalp'
+        constraint = export(gifti(BF.data.mesh.tess_scalp), 'ft');
+end
 
 M1 = BF.data.transforms.toNative;
 
@@ -54,14 +67,14 @@ switch S.space
         M1 = eye(4);
 end
 
-iskull = ft_convert_units(ft_transform_geometry(M1, iskull));
+constraint = ft_convert_units(ft_transform_geometry(M1, constraint));
 
-mn = min(iskull.pnt);
-mx = max(iskull.pnt);
+mn = min(constraint.pnt);
+mx = max(constraint.pnt);
 
 resolution = S.resolution;
 
-if isequal(iskull.unit, 'm')
+if isequal(constraint.unit, 'm')
     resolution = 1e-3*resolution;
 end
 
@@ -90,7 +103,7 @@ grid.dim   = [length(grid.xgrid) length(grid.ygrid) length(grid.zgrid)];
 
 pos   = [X(:) Y(:) Z(:)];
 
-inside = ft_inside_vol(pos, struct('bnd', iskull));
+inside = ft_inside_vol(pos, struct('bnd', constraint));
 
 pos    = spm_eeg_inv_transform_points(M2, pos);
 
