@@ -43,6 +43,10 @@ elseif nargin < 2
     error('Two input arguments are required');
 end
 
+if ~isfield(S, 'constrain')
+    S.constrain = 'iskull';
+end
+
 switch S.constrain
     case 'iskull'
         constraint = export(gifti(BF.data.mesh.tess_iskull), 'ft');
