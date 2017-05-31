@@ -72,6 +72,9 @@ switch S.space
         sMRI   = BF.data.mesh.sMRI;
 end
 
+[pth,nam,ext,num] = spm_fileparts(sMRI);
+sMRI = fullfile(pth, [nam ext]);
+
 if isfield(BF.sources, 'grid') || isfield(BF.sources, 'voi')       
     if isfield(BF.sources, 'grid')
         sourcespace    = 'grid';
