@@ -13,7 +13,7 @@ function mont = bf_output_PLI(BF, S)
 % (https://openarchive.ki.se/xmlui/bitstream/handle/10616/40241/ram_berättelse.pdf?sequence=1)
 % with a method based on Stam CJ, Nolte G, Daffertshofer A (Hum Brain Mapp 2007)
 % 
-% $Id: bf_output_montage.m 130 2015-07-02 16:25:57Z dominik.bach@googlemail.com $
+% $Id: $
 %--------------------------------------------------------------------------
 if nargin == 0
     label = cfg_entry;
