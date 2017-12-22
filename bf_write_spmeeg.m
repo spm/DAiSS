@@ -109,8 +109,8 @@ if isfield(BF.output, 'montage')
         montage.tra((end+1):(end+na), (end+1):(end+na)) = eye(na);
     end
     
-    montage.chantypeorg = chantype(D, D.indchannel(montage.labelorg))';
-    montage.chanunitorg = units(D, D.indchannel(montage.labelorg))';
+    montage.chantypeold = chantype(D, D.indchannel(montage.labelorg))';
+    montage.chanunitold = units(D, D.indchannel(montage.labelorg))';
 elseif isfield(BF.output, 'sourcedata')
     ftdata = BF.output.sourcedata.(S.modality).ftdata;
     
