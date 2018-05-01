@@ -159,7 +159,7 @@ end;
 %%%%%%%%%%%%
 
 if isfield(job.whatconditions, 'all')
-    S(1).trials = 1:D.ntrials;
+    S(1).trials = D.indtrial(D.condlist, 'GOOD');
 else    
     S(1).trials = D.indtrial(job.whatconditions.condlabel, 'GOOD');
     if isempty(S.trials)
