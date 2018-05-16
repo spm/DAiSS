@@ -159,6 +159,13 @@ for m  = 1:numel(modalities)
                     Wc          = W* BF.features.(modalities{m}).C*W';  % bf estimated source covariance matrix
                     [dum, mi]   = max(diag(Wc));
                     montage.tra = [montage.tra; W(mi, :)*U'];
+                    
+                    if isfield(BF.sources, 'voi')
+                        maxpos = BF.sources.voi.pos(ind(mi), :);                        
+                    else                        
+                        maxpos = mnipos(ind, :);
+                    end
+                    disp(['Selected position for ' montage.labelnew{v} ' is [' num2str(maxpos) ']']);
                 case 'svd'
                     %% just take top pca component for now
                     Wc          = W* BF.features.(modalities{m}).C*W'; % bf estimated source covariance matrix
