@@ -114,7 +114,7 @@ if nargin == 0
     contrast = cfg_entry;
     contrast.tag = 'contrast';
     contrast.name = 'Time contrast';
-    contrast.strtype = 'i';
+    contrast.strtype = 'r';
     contrast.num = [1 Inf];
     contrast.val = {1};
     
