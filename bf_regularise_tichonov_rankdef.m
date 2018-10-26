@@ -21,7 +21,7 @@ if nargin == 0
     lambda.name = 'Regularisation';
     lambda.strtype = 'r';
     lambda.num = [1 1];
-    lambda.val = {0};
+    lambda.val = {5};
     lambda.help = {'Select the regularisation (in %)'};
     
     res      = cfg_branch;
