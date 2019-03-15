@@ -136,7 +136,7 @@ end
 voi.label = voi.label(:);
 
 % Remove points outside the brain
-inside = ft_inside_vol(voi.pos, struct('bnd', iskull));
+inside = ft_inside_headmodel(voi.pos, struct('bnd', iskull));
 
 voi.pos(~inside, :)  = [];
 voi.pos2voi(~inside) = [];

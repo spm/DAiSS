@@ -107,7 +107,7 @@ grid.dim   = [length(grid.xgrid) length(grid.ygrid) length(grid.zgrid)];
 
 pos   = [X(:) Y(:) Z(:)];
 
-inside = ft_inside_vol(pos, struct('bnd', constraint));
+inside = ft_inside_headmodel(pos, struct('bnd', constraint));
 
 pos    = spm_eeg_inv_transform_points(M2, pos);
 

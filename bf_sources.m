@@ -133,7 +133,7 @@ for m = 1:numel(modalities)
                 set(F,'renderer','OpenGL');
             end
             
-            ft_plot_vol(vol, 'edgecolor', [0 0 0], 'facealpha', 0);
+            ft_plot_headmodel(vol, 'edgecolor', [0 0 0], 'facealpha', 0);
             
             hold on
             
