@@ -298,7 +298,7 @@ try S.reference.refchan;
             end
         end
         
-                 
+        
     elseif strmatch(ref_feature,'phase');
         
         for j = 1:numel(refsig)
@@ -342,7 +342,6 @@ try S.reference.refchan;
 end
 
 
-keyboard
 %%%%%%%%%%%%
 
 switch ref_feature
@@ -505,9 +504,6 @@ for i = 1:nvert
             
             for j = 1:J
                 
-                V=[];
-                c=[1;1;1];
-                
                 for k = 1:ntrials
                     if strmatch(ref_feature,'amplitude')
                         Xk=[(cos(phase(:,k))-mean(cos(phase(:,k)),1))./std(cos(phase(:,k))),(sin(phase(:,k))-mean(sin(phase(:,k)),1))./std(sin(phase(:,k))),(lowamp(:,k)-mean(lowamp(:,k),1))./std(lowamp(:,k))];
@@ -574,12 +570,12 @@ B3=squeeze(mean(mean(Beta(:,:,:,3,:),2),1));
 % seond level stats
 for i=1:nvert
     
+    V=[];
     Xb=[];
     Xb(1:ntrials,1)=ones(ntrials,1);Xb(ntrials+1:2*ntrials,2)=ones(ntrials,1);
     yb=[B1(i,:),B2(i,:)];
-    c=[1;1];
-    [Tb,df,Beta_b,xX,xCon]=spm_ancova(Xb,V,yb',c);
-    F=Tb^2;
+    c=eye(2);
+    [F,df,Beta_b,xX,xCon]=spm_ancova(Xb,V,yb',c);
     pb(i)=1-spm_Fcdf(F,df(1),df(2));
     
     %to test for significance amp-amp
@@ -590,10 +586,9 @@ for i=1:nvert
     %to test for significance phase-amp & amp-amp
     Xb=[];
     Xb(1:ntrials,1)=ones(ntrials,1);Xb(ntrials+1:2*ntrials,2)=ones(ntrials,1);Xb(2*ntrials+1:3*ntrials,3)=ones(ntrials,1);
-    c=[1;1;1];
+    c=eye(3);
     yb=[B1(i,:),B2(i,:),B3(i,:)];
-    [Tb,df,Beta_b,xX,xCon]=spm_ancova(Xb,V,yb',c);
-    F_total=Tb^2;
+    [F_total,df,Beta_b,xX,xCon]=spm_ancova(Xb,V,yb',c);
     pb_total(i)=1-spm_Fcdf(F_total,df(1),df(2));
     
 end
@@ -645,4 +640,3 @@ cnt=cnt+1;
 
 
 res = image;
-
