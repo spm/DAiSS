@@ -1,4 +1,4 @@
-function res = bf_functional_voi_localmax(BF, S)
+function res = bf_group_functionalROI(BF, S)
 % Computes Minimum Norm projectors
 % Copyright (C) 2013 Wellcome Trust Centre for Neuroimaging
 
