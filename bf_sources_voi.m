@@ -85,7 +85,7 @@ iskull = export(gifti(BF.data.mesh.tess_iskull), 'ft');
 M1 = BF.data.transforms.toNative;
 M1 = BF.data.transforms.toMNI/M1;
 
-iskull = ft_convert_units(ft_transform_geometry(M1, iskull));
+iskull = ft_determine_units(ft_transform_geometry(M1, iskull));
 
        
 % transform MNI coords in MNI space into space where we are doing the

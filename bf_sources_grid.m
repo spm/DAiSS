@@ -71,7 +71,7 @@ switch S.space
         M1 = eye(4);
 end
 
-constraint = ft_convert_units(ft_transform_geometry(M1, constraint));
+constraint = ft_determine_units(ft_transform_geometry(M1, constraint));
 
 mn = min(constraint.pnt);
 mx = max(constraint.pnt);
