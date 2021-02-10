@@ -141,12 +141,12 @@ if nargin == 0
         'bycondition'
         'bytrial'
         }';
-    result.val = {'singleimage'};
+    result.val = {'singleimage'};        
     
     scale         = cfg_menu;
     scale.tag     = 'scale';
-    scale.name    = 'Scale by filter norm';
-    scale.help    = {'Scale by IID noise projected through the filters.'};
+    scale.name    = 'Unit-noise-gain';
+    scale.help    =  {'Scale power by norm of the filters (unit-noise-gain)'};
     scale.labels  = {'yes', 'no'};
     scale.values  = {'yes', 'no'};
     scale.val = {'no'};
