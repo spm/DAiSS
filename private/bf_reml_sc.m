@@ -1,4 +1,4 @@
-function [C,h,Ph,F,Fa,Fc,Eh,Ch,hE,hC,Q] = spm_reml_sc(YY,X,Q,N,hE,hC,V)
+function [C,h,Ph,F,Fa,Fc,Eh,Ch,hE,hC,Q] = bf_reml_sc(YY,X,Q,N,hE,hC,V)
 % ReML estimation of covariance components from y*y' - proper components
 % STANDLALONE VERSION FOR DAiSS in case fundamental changes are made in SPM
 % FORMAT [C,h,Ph,F,Fa,Fc,Eh,Ch,hE,hC,Q] = spm_reml_sc(YY,X,Q,N,[hE,hC,V])
@@ -45,7 +45,7 @@ function [C,h,Ph,F,Fa,Fc,Eh,Ch,hE,hC,Q] = spm_reml_sc(YY,X,Q,N,hE,hC,V)
 % Copyright (C) 2007-2020 Wellcome Centre for Human Neuroimaging
  
 % Karl Friston
-% $Id$
+% $Id: bf_reml_sc.m 8136 2021-08-13 13:07:51Z george $
 
  
 % assume a single sample if not specified
